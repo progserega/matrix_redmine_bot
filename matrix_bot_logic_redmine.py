@@ -27,10 +27,41 @@ import config as conf
 from matrix_client.api import MatrixRequestError
 from pyzabbix import ZabbixAPI
 
+
+def ra_get_projects(log):
+  # скачиваем список проектов:
+  data = get_redmine_api(log,"projects")
+  return data
+
+def ra_create_issue(log, data):
+  # создаём "ошибку" в redmine:
+  ret = post_redmine_api(log,"issues",{"issue":data})
+  if ret == None:
+    log.error("post_redmine_api('issues')")
+    return None
+  if "errors" in ret:
+    log.warning("error create issue: %s"%str(ret["errors"]))
+    return None
+  else:
+    return ret["issue"]["id"]
+
 def redmine_test(log):
   # скачиваем список ошибок:
-  all_issues = get_redmine_api(log,"issues")
-  log.debug("%s"%(json.dumps(all_issues, indent=4, sort_keys=True,ensure_ascii=False)))
+#  all_issues = get_redmine_api(log,"issues")
+#  log.debug("%s"%(json.dumps(all_issues, indent=4, sort_keys=True,ensure_ascii=False)))
+#  all_projects = ra_get_projects(log)
+#  log.debug("%s"%(json.dumps(all_projects, indent=4, sort_keys=True,ensure_ascii=False)))
+  issue={}
+  issue["project_id"]=1
+  issue["subject"]="тестовая задача от бота"
+  issue["description"]="создана через питон"
+  issue_id=ra_create_issue(log,issue)
+  if issue_id == None:
+    log.error("ra_create_issue()")
+    return False
+  else:
+    log.info("создал ошибку: http://redmine.prim.drsk.ru/issues/%d"%issue_id)
+    
   return True
 
 def get_redmine_api(log,request_name):
@@ -41,6 +72,19 @@ def get_redmine_api(log,request_name):
     "request_name":request_name,\
     "redmine_api_access_key":conf.redmine_api_access_key}
     data = get_url_json(log,url)
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    return None
+  return data
+
+def post_redmine_api(log,request_name,json_data):
+# request_name: projects, users, issues и т.п. (см. https://www.redmine.org/projects/redmine/wiki/Rest_api )
+  try:
+    url="%(redmine_server)s/%(request_name)s.json?key=%(redmine_api_access_key)s"%{\
+    "redmine_server":conf.redmine_server,\
+    "request_name":request_name,\
+    "redmine_api_access_key":conf.redmine_api_access_key}
+    data = post_url_json(log,url,json_data)
   except Exception as e:
     log.error(get_exception_traceback_descr(e))
     return None
@@ -67,6 +111,13 @@ def get_url_data(log,url):
     return None
   return data
    
+def post_url_json(log,url,data):
+  try:
+    response = requests.post(url, json=data)
+  except Exception as e:
+    log.error("post_url_json: requests.post(%s,data) exception: %s"%(url,e))
+    return None
+  return response.json()
 
 def get_exception_traceback_descr(e):
   tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
