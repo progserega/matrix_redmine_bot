@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+#======== MATRIX =============
+matrix_server="https://matrix.org"
+matrix_username="redmine"
+matrix_password="XXXX"
+matrix_device_id="HSDNLQODDX"
+matrix_bot_logic_file = "matrix_bot_rules.json"
+
+#======== ZABBIX =========
+redmine_server="http://redmine.corp.net"
+redmine_user="matrix_redmine_bot"
+redmine_api_access_key="XXXXXXXXXXXXXXXX"
+
+#========= Global ===========
+
+log_path_bot="matrix_redmine_bot.log"
+# how match keep backup log files:
+log_backup_count=30
+# can be:
+# 'S' - Seconds
+# 'M' - Minutes
+# 'H' - Hours
+# 'D' - Days
+# 'W0'-'W6' - Weekday (0=Monday)
+# 'midnight' - Roll over at midnight
+log_backup_when='midnight'
+
+debug=True
