@@ -28,10 +28,27 @@ from matrix_client.api import MatrixRequestError
 from pyzabbix import ZabbixAPI
 
 
+def ra_get_users(log):
+  # скачиваем список проектов:
+  data = get_redmine_api(log,"users")
+  return data
+
 def ra_get_projects(log):
   # скачиваем список проектов:
   data = get_redmine_api(log,"projects")
   return data
+
+def ra_create_user(log, data):
+  # создаём "пользователя" в redmine:
+  ret = post_redmine_api(log,"users",{"user":data})
+  if ret == None:
+    log.error("post_redmine_api('users')")
+    return None
+  if "errors" in ret:
+    log.warning("error create user: %s"%str(ret["errors"]))
+    return None
+  else:
+    return ret["user"]["id"]
 
 def ra_create_issue(log, data):
   # создаём "ошибку" в redmine:
@@ -47,8 +64,30 @@ def ra_create_issue(log, data):
 
 def redmine_test(log):
   # скачиваем список ошибок:
-#  all_issues = get_redmine_api(log,"issues")
-#  log.debug("%s"%(json.dumps(all_issues, indent=4, sort_keys=True,ensure_ascii=False)))
+  all_users = ra_get_users(log)
+  log.debug("%s"%(json.dumps(all_users, indent=4, sort_keys=True,ensure_ascii=False)))
+#return True
+
+  user={}
+  user["login"]="semenov_sv"
+  user["firstname"]="Сергей"
+  user["lastname"]="Семенов"
+  user["mail"]="semenov@rsprim.ru"
+  user["auth_source_id"]=1
+
+  user_id=ra_create_user(log,user)
+  if user_id == None:
+    log.error("ra_create_user()")
+    return False
+  else:
+    log.info("создал пользователя: http://redmine.prim.drsk.ru/users/%d"%user_id)
+  return True
+  
+
+  # скачиваем список ошибок:
+  all_issues = get_redmine_api(log,"issues")
+  log.debug("%s"%(json.dumps(all_issues, indent=4, sort_keys=True,ensure_ascii=False)))
+  return True
 #  all_projects = ra_get_projects(log)
 #  log.debug("%s"%(json.dumps(all_projects, indent=4, sort_keys=True,ensure_ascii=False)))
   issue={}
