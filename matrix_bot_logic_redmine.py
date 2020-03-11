@@ -25,109 +25,40 @@ import matrix_bot_api as mba
 import matrix_bot_logic as mbl
 import config as conf
 from matrix_client.api import MatrixRequestError
-from pyzabbix import ZabbixAPI
+# https://python-redmine.com/resources/index.html
+from redminelib import Redmine
 
+redmine=None
 
-def ra_get_users(log):
-  # скачиваем список проектов:
-  data = get_redmine_api(log,"users")
-  return data
-
-def ra_get_projects(log):
-  # скачиваем список проектов:
-  data = get_redmine_api(log,"projects")
-  return data
-
-def ra_create_user(log, data):
-  # создаём "пользователя" в redmine:
-  ret = post_redmine_api(log,"users",{"user":data})
-  if ret == None:
-    log.error("post_redmine_api('users')")
+def ra_init():
+  global redmine
+  try:
+    redmine = Redmine(conf.redmine_server, key=conf.redmine_api_access_key, requests={'verify': False})
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
     return None
-  if "errors" in ret:
-    log.warning("error create user: %s"%str(ret["errors"]))
-    return None
-  else:
-    return ret["user"]["id"]
-
-def ra_create_issue(log, data):
-  # создаём "ошибку" в redmine:
-  ret = post_redmine_api(log,"issues",{"issue":data})
-  if ret == None:
-    log.error("post_redmine_api('issues')")
-    return None
-  if "errors" in ret:
-    log.warning("error create issue: %s"%str(ret["errors"]))
-    return None
-  else:
-    return ret["issue"]["id"]
+  return redmine
 
 def redmine_test(log):
-  # скачиваем список ошибок:
-  all_users = ra_get_users(log)
-  log.debug("%s"%(json.dumps(all_users, indent=4, sort_keys=True,ensure_ascii=False)))
-#return True
-
-  user={}
-  user["login"]="semenov_sv"
-  user["firstname"]="Сергей"
-  user["lastname"]="Семенов"
-  user["mail"]="semenov@rsprim.ru"
-  user["auth_source_id"]=1
-
-  user_id=ra_create_user(log,user)
-  if user_id == None:
-    log.error("ra_create_user()")
-    return False
-  else:
-    log.info("создал пользователя: http://redmine.prim.drsk.ru/users/%d"%user_id)
-  return True
-  
-
-  # скачиваем список ошибок:
-  all_issues = get_redmine_api(log,"issues")
-  log.debug("%s"%(json.dumps(all_issues, indent=4, sort_keys=True,ensure_ascii=False)))
-  return True
-#  all_projects = ra_get_projects(log)
-#  log.debug("%s"%(json.dumps(all_projects, indent=4, sort_keys=True,ensure_ascii=False)))
-  issue={}
-  issue["project_id"]=1
-  issue["subject"]="тестовая задача от бота"
-  issue["description"]="создана через питон"
-  issue_id=ra_create_issue(log,issue)
-  if issue_id == None:
-    log.error("ra_create_issue()")
-    return False
-  else:
-    log.info("создал ошибку: http://redmine.prim.drsk.ru/issues/%d"%issue_id)
-    
+  global redmine
+  ra_init()
+  issue = redmine.issue.create(
+      project_id='tech_support_upr',
+      subject='тестирование вложения через API',
+      description='ошибка с файлом вложения',
+      estimated_hours=4,
+      done_ratio=40,
+      uploads=[{'path': '/home/serega/Nextcloud/work/drsk/matrix_redmine_bot/test.txt',
+        'filename':"test.txt",
+        'description':'тестовое вложение'
+      }]
+      )
+  print(issue)
+  print("issue.id=%d"%issue.id)
+  issue.due_date = datetime.date(2020, 4, 1)
+  issue.save()
   return True
 
-def get_redmine_api(log,request_name):
-# request_name: projects, users, issues и т.п. (см. https://www.redmine.org/projects/redmine/wiki/Rest_api )
-  try:
-    url="%(redmine_server)s/%(request_name)s.json?key=%(redmine_api_access_key)s"%{\
-    "redmine_server":conf.redmine_server,\
-    "request_name":request_name,\
-    "redmine_api_access_key":conf.redmine_api_access_key}
-    data = get_url_json(log,url)
-  except Exception as e:
-    log.error(get_exception_traceback_descr(e))
-    return None
-  return data
-
-def post_redmine_api(log,request_name,json_data):
-# request_name: projects, users, issues и т.п. (см. https://www.redmine.org/projects/redmine/wiki/Rest_api )
-  try:
-    url="%(redmine_server)s/%(request_name)s.json?key=%(redmine_api_access_key)s"%{\
-    "redmine_server":conf.redmine_server,\
-    "request_name":request_name,\
-    "redmine_api_access_key":conf.redmine_api_access_key}
-    data = post_url_json(log,url,json_data)
-  except Exception as e:
-    log.error(get_exception_traceback_descr(e))
-    return None
-  return data
 
 def get_url_json(log,url):
   data = get_url_data(log,url)
@@ -149,6 +80,15 @@ def get_url_data(log,url):
     log.error("get_url_data: requests.get(%s) exception: %s"%(url,e))
     return None
   return data
+   
+def post_url_binary_data(log,url,data):
+  try:
+    files = {'upload_file': data}
+    response = requests.post(url, files=files)
+  except Exception as e:
+    log.error("post_url_binary_data: requests.post(%s,data) exception: %s"%(url,e))
+    return None
+  return response.json()
    
 def post_url_json(log,url,data):
   try:
