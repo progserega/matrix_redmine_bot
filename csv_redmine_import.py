@@ -59,6 +59,10 @@ def get_priority_id_by_name(list_name):
     return 5 # новая
   elif list_name=="Средний приоритет":
     return 2
+  elif list_name=="Срочно":
+    return 4
+  elif list_name=="Низкий приоритет":
+    return 1
   else:
     return 2
 
@@ -114,7 +118,8 @@ def main(log):
     author_id=get_user_id_by_name(line["Автор"])
     print("author_id=%d"%author_id)
     assigned_id=get_user_id_by_name(line["Назначена"])
-#continue
+    priority_id=get_priority_id_by_name(line["Приоритет"]),
+    print("priority_id=%d"%priority_id)
 
     watcher_user_ids=[]
     if author_id!=None:
@@ -123,17 +128,19 @@ def main(log):
     issue = rd.redmine.issue.create(
       project_id='tech_support_upr',
       subject=line["Тема"],
+      priority_id=get_priority_id_by_name(line["Приоритет"]),
       description=description,
       status_id=get_status_id_by_list_name(line["Статус"]),
       estimated_hours=line["Оценка времени"],
       done_ratio=line["Готовность"],
       start_date=get_date(line["Начата"]),
       due_date=get_date(line["Дата выполнения"]),
-      priority_id=get_priority_id_by_name(line["Приоритет"]),
       watcher_user_ids=watcher_user_ids
       )
     if assigned_id!=None:
       issue.assigned_to_id=assigned_id
+    issue.status_id=get_status_id_by_list_name(line["Статус"])
+#issue.priority_id=get_priority_id_by_name(line["Приоритет"]),
     issue.save()
     print("issue.id=%d"%issue.id)
 
