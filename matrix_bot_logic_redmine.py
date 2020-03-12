@@ -42,6 +42,24 @@ def ra_init():
 def redmine_test(log):
   global redmine
   ra_init()
+
+#ret=redmine.enumeration.get(1, resource='issue_priorities').value()
+  ret=redmine.enumeration.get(1, resource='issue_priorities')
+  print(ret)
+  ret=redmine.enumeration.get(2, resource='issue_priorities')
+  print(ret)
+  ret=redmine.enumeration.get(3, resource='issue_priorities')
+  print(ret)
+  ret=redmine.enumeration.get(4, resource='issue_priorities')
+  print(ret)
+  ret=redmine.enumeration.get(5, resource='issue_priorities')
+  print(ret)
+  ret=redmine.enumeration.get(6, resource='issue_priorities')
+  print(ret)
+  return True
+
+
+
   issue = redmine.issue.create(
       project_id='tech_support_upr',
       subject='тестирование вложения через API',

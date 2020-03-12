@@ -74,19 +74,19 @@ def ra_create_issue(log, data):
 
 def redmine_test(log):
   # скачиваем список проектов:
-  all_issues = get_redmine_api(log,"projects")
-  log.debug("%s"%(json.dumps(all_issues, indent=4, sort_keys=True,ensure_ascii=False)))
-  return True
+#all_issues = get_redmine_api(log,"projects")
+# log.debug("%s"%(json.dumps(all_issues, indent=4, sort_keys=True,ensure_ascii=False)))
+# return True
   # скачиваем список ошибок:
-  all_users = ra_get_users(log)
-  log.debug("%s"%(json.dumps(all_users, indent=4, sort_keys=True,ensure_ascii=False)))
+# all_users = ra_get_users(log)
+# log.debug("%s"%(json.dumps(all_users, indent=4, sort_keys=True,ensure_ascii=False)))
 #return True
 
   user={}
-  user["login"]="semenov_sv"
-  user["firstname"]="Сергей"
-  user["lastname"]="Семенов"
-  user["mail"]="semenov@rsprim.ru"
+  user["login"]="svc_odsa_340-00"
+  user["firstname"]="svc_ODSA_340-00"
+  user["lastname"]="неизвестно"
+  user["mail"]="test@rsprim.ru"
   user["auth_source_id"]=1
 
   user_id=ra_create_user(log,user)
