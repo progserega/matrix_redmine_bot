@@ -47,6 +47,24 @@ def get_status_id_by_list_name(list_name):
   else:
     return 1
 
+def get_project_id_by_name(name):
+  if name=="01 Заявки пользователей в ИТ ЗЭС":
+    return "tech_support_zes"
+  elif name=="01 Заявки пользователей в ИТ СЭС":
+    return "tech_support_ses"
+  elif name=="01 Заявки пользователей в ИТ ЦЭС":
+    return "tech_support_ces"
+  elif name=="Система учёта диспетчерских отключений":
+    return "arm_disp_otkl"
+  elif name=="АРМ КДЗ":
+    return "arm_kdz"
+  elif name=="Центральная база оборудования и АРМы":
+    return "arm_bdob"
+  elif name=="АРМ Лист осмотра":
+    return "arm_inspection_sheet_mobile"
+  else:
+    return "tech_support_upr"
+
 def get_priority_id_by_name(list_name):
 #1  Низкий
 #2  Нормальный
@@ -71,11 +89,12 @@ def get_user_id_by_name(user_name):
     fio=user_name.split()
     fam=fio[0]
     imya=fio[1]
+    log.debug("fam=%s, imya=%s"%(fam,imya))
   except:
     return None
   users=list(rd.redmine.user.all().values())
   for item in users:
-    if item["firstname"]==imya and item["lastname"]==fam:
+    if item["firstname"]==imya and (item["lastname"]==fam or item["lastname"].replace("ё","е") == fam.replace("ё","е")):
       return item["id"]
   return None
 
@@ -95,6 +114,7 @@ def main(log):
 #r = csv.reader(csvfile, delimiter=';', quotechar='"')
   for line in result:
     print("===========")
+    print("id: %s"%line["id"])
     print("Начата: %s"%line["Начата"])
     print("Статус: %s"%line["Статус"])
     print("Приоритет: %s"%line["Приоритет"])
@@ -116,17 +136,27 @@ def main(log):
     description+="\nСсылка на старый redmine: http://redmine.rs.int/issues/%s"%line["id"]
 
     author_id=get_user_id_by_name(line["Автор"])
-    print("author_id=%d"%author_id)
+    if author_id == None:
+      log.error("не смог найти пользователя: %s"%line["Автор"])
+    else:
+      print("author_id=%d"%author_id)
     assigned_id=get_user_id_by_name(line["Назначена"])
+    if assigned_id == None:
+      log.error("не смог найти пользователя: %s"%line["Назначена"])
+    else:
+      print("assigned_id=%d"%assigned_id)
     priority_id=get_priority_id_by_name(line["Приоритет"]),
     print("priority_id=%d"%priority_id)
+
+    project_id=get_project_id_by_name(line["Проект"])
+    log.debug("project_id=%s"%project_id)
 
     watcher_user_ids=[]
     if author_id!=None:
       watcher_user_ids.append(author_id)
 
     issue = rd.redmine.issue.create(
-      project_id='tech_support_upr',
+      project_id=project_id,
       subject=line["Тема"],
       priority_id=get_priority_id_by_name(line["Приоритет"]),
       description=description,
