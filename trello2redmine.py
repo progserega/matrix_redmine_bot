@@ -126,52 +126,6 @@ def import_from_json(log):
   return True
 
 
-def get_url_json(log,url):
-  data = get_url_data(log,url)
-  if data == None:
-    log.error("get_url_json: get_url_data() return None")
-    return None
-  try:
-    json_data = json.loads(data.decode('utf8'))
-  except Exception as e:
-    log.error("get_url_json: parse json with error: '%s' from url: %s"%(e,url))
-    return None
-  return json_data
-
-def get_url_data(log,url):
-  try:
-    response = requests.get(url, stream=True)
-    data = response.content      # a `bytes` object
-  except Exception as e:
-    log.error("get_url_data: requests.get(%s) exception: %s"%(url,e))
-    return None
-  return data
-   
-def post_url_binary_data(log,url,data):
-  try:
-    files = {'upload_file': data}
-    response = requests.post(url, files=files)
-  except Exception as e:
-    log.error("post_url_binary_data: requests.post(%s,data) exception: %s"%(url,e))
-    return None
-  return response.json()
-   
-def post_url_json(log,url,data):
-  try:
-    response = requests.post(url, json=data)
-  except Exception as e:
-    log.error("post_url_json: requests.post(%s,data) exception: %s"%(url,e))
-    return None
-  return response.json()
-
-def get_exception_traceback_descr(e):
-  tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-  result=""
-  for msg in tb_str:
-    result+=msg
-  return result
-
-
 if __name__ == '__main__':
   log=logging.getLogger("matrix_bot_logic_zabbix")
   if conf.debug:
