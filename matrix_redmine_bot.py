@@ -302,6 +302,13 @@ def main():
     data=mbl.load_data(log)
   log.debug("release lock() after access global data")
 
+  if mbl.init(log,conf.matrix_bot_logic_file,data)==False:
+    log.error("error matrix_bot_logic.init()")
+    sys.exit(1)
+  if mblr.init(log,conf.redmine_server,conf.redmine_api_access_key) == False:
+    log.error("error matrix_bot_logic_redmine.init()")
+    sys.exit(1)
+
   log.info("try init matrix-client")
   client = matrix_connect()
   log.info("success init matrix-client")
@@ -352,12 +359,6 @@ if __name__ == '__main__':
   log_lib.addHandler(fh)
 
   log.info("Program started")
-  if mbl.init(log,conf.matrix_bot_logic_file)==False:
-    log.error("error matrix_bot_logic.init()")
-    sys.exit(1)
-  if mblr.init(log,conf.redmine_server,conf.redmine_api_access_key) == False:
-    log.error("error matrix_bot_logic_redmine.init()")
-    sys.exit(1)
 
   if main()==False:
     log.error("error main()")

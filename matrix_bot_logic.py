@@ -29,7 +29,6 @@ from matrix_client.api import MatrixRequestError
 from matrix_client.api import MatrixHttpLibError
 from requests.exceptions import MissingSchema
 
-client = None
 log = None
 logic={}
 lock = None
@@ -42,8 +41,7 @@ def get_exception_traceback_descr(e):
     result+=msg
   return result
 
-def is_room_public(log,room):
-  global client
+def is_room_public(log,client,room):
   # Проверяем сколько в комнате пользователей. Если более двух - то это не приватный чат и потому не отвечаем на команды:
   users = client.rooms[room].get_joined_members()
   if users == None:
@@ -59,11 +57,12 @@ def is_room_public(log,room):
     log.debug("this is private chat (2 users) - proccess commands")
     return False
 
-def process_message(log,client,user,room,message,formated_message=None,format_type=None,reply_to_id=None,file_url=None,file_type=None):
+def process_message(log,client_class,user,room,message,formated_message=None,format_type=None,reply_to_id=None,file_url=None,file_type=None):
   global logic
   global memmory
   source_message=None
   source_cmd=None
+  client=client_class
 
   if reply_to_id!=None and format_type=="org.matrix.custom.html" and formated_message!=None:
     # разбираем, чтобы получить исходное сообщение и ответ
@@ -74,14 +73,14 @@ def process_message(log,client,user,room,message,formated_message=None,format_ty
     log.debug("cmd=%s"%source_cmd)
     message=source_cmd
 
-  if is_room_public(log,room):
-    if re.match('^%s'%conf.bot_command, message) != None:
-      # убираем командный префикс:
-      message=re.sub('^%s '%conf.bot_command,'', message)
-    else:
-      # пользователь обращается НЕ к роботу - пропуск обработки
-      log.debug("skip message in public room without our name")
-      return True
+  if re.match(r'^%s'%conf.bot_command, message) != None:
+    # убираем командный префикс:
+    log.debug("remove prefix from cmd")
+    message=re.sub('^%s '%conf.bot_command,'', message)
+  else:
+    # пользователь обращается НЕ к роботу - пропуск обработки
+    log.debug("skip message in public room without our name")
+    return True
 
   # обработка по логике
   log.debug("get cmd: %s"%message)
@@ -91,8 +90,12 @@ def process_message(log,client,user,room,message,formated_message=None,format_ty
     return True
   state=get_state(log,room)
   if state==None:
-    log.error("get_state(log,%s)"%room)
-    return False
+    log.warning("get_state(log,%s)"%room)
+    set_state(room,logic)
+    state=get_state(log,room)
+    if state==None:
+      log.error("get_state(log,%s)"%room)
+      return False
 
   for cmd in state:
     if message.lower() == u"отмена" or message.lower() == "cancel" or message.lower() == "0":
@@ -249,72 +252,62 @@ def check_equal_cmd(state,message,key):
 
 def get_env(room,env_name):
   global memmory
-  if "rooms" not in memmory:
+  if room not in memmory:
     return None
-  if room not in memmory["rooms"]:
+  if "env" not in memmory[room]:
     return None
-  if "env" not in memmory["rooms"][room]:
+  if env_name not in memmory[room]["env"]:
     return None
-  if env_name not in memmory["rooms"][room]["env"]:
-    return None
-  return memmory["rooms"][room]["env"][env_name]
+  return memmory[room]["env"][env_name]
 
 def get_env_list(room):
   global memmory
-  if "rooms" not in memmory:
+  if room not in memmory:
     return None
-  if room not in memmory["rooms"]:
+  if "env" not in memmory[room]:
     return None
-  if "env" not in memmory["rooms"][room]:
-    return None
-  return memmory["rooms"][room]["env"]
+  return memmory[room]["env"]
 
 def set_env(room,env_name,env_val):
   global memmory
-  if "rooms" not in memmory:
-    return None
-  if room not in memmory["rooms"]:
-    memmory["rooms"][room]={}
-  if "env" not in memmory["rooms"][room]:
-    memmory["rooms"][room]["env"]={}
-  memmory["rooms"][room]["env"][env_name]=env_val
+  if room not in memmory:
+    memmory[room]={}
+  if "env" not in memmory[room]:
+    memmory[room]["env"]={}
+  memmory[room]["env"][env_name]=env_val
   return True
 
 def set_state(room,state):
   global memmory
   global logic
-  if "rooms" not in memmory:
-    return None
-  if room not in memmory["rooms"]:
-    memmory["rooms"][room]={}
-  memmory["rooms"][room]["state"]=state
+  if room not in memmory:
+    memmory[room]={}
+  memmory[room]["state"]=state
   return True
 
 def reset_room_memmory(room):
   global memmory
-  if "rooms" not in memmory:
-    return None
-  if room in memmory["rooms"]:
-    del memmory["rooms"][room]
+  if room in memmory:
+    del memmory[room]
   return True
 
 def get_state(log,room):
   global memmory
   global logic
-  if "rooms" not in memmory:
-    return None
-  if room in memmory["rooms"]:
-    if "state" not in memmory["rooms"][room]:
+  if room in memmory:
+    if "state" not in memmory[room]:
       log.error("memmory corrupt for room %s - can not find 'state' struct"%room)
       return None
     else:
-      return memmory["rooms"][room]["state"]
+      return memmory[room]["state"]
   else:
     # Иначе возвращаем начальный статус логики:
     return logic
 
-def init(log,rule_file):
+def init(log,rule_file,data):
   global logic
+  global memmory
+
   try:
     json_data=open(rule_file,"r",encoding="utf-8").read()
   except Exception as e:
