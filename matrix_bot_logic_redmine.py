@@ -78,7 +78,7 @@ def get_user_id_by_name(log,redmine_user_name):
 
 def redmine_test(log):
   global redmine
-  init(log,conf.redmine_server,conf.redmine_api_access_key):
+  init(log,conf.redmine_server,conf.redmine_api_access_key)
 
 #ret=redmine.enumeration.get(1, resource='issue_priorities').value()
   ret=redmine.enumeration.get(1, resource='issue_priorities')

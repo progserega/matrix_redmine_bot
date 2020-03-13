@@ -17,6 +17,7 @@ import logging
 import time
 import json
 import os
+import uuid
 import traceback
 import re
 import requests
@@ -328,8 +329,7 @@ def init(log,rule_file):
     return False
   return True
 
-def save_data(data):
-  global log
+def save_data(log,data):
   log.debug("=start function=")
   log.debug("save to data_file:%s"%conf.data_file)
   try:
@@ -352,8 +352,7 @@ def save_data(data):
     return False
   return True
 
-def load_data():
-  global log
+def load_data(log):
   log.debug("=start function=")
   tmp_data_file=conf.data_file
   reset=False
@@ -435,6 +434,6 @@ def load_data():
       log.warning("Сброс промежуточных данных")
       data={}
       data["rooms"]={}
-    save_data(data)
+    save_data(log,data)
   #debug_dump_json_to_file("debug_data_as_json.json",data)
   return data

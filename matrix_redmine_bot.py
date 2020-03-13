@@ -29,9 +29,9 @@ from matrix_client.client import MatrixClient
 from matrix_client.api import MatrixRequestError
 from matrix_client.api import MatrixHttpLibError
 from requests.exceptions import MissingSchema
-import sendemail as mail
 import matrix_bot_api as mba
 import matrix_bot_logic as mbl
+import matrix_bot_logic_redmine as mblr
 import config as conf
 
 client = None
@@ -45,7 +45,61 @@ def get_exception_traceback_descr(e):
   for msg in tb_str:
     result+=msg
   return result
+ 
+def leave_room(room_id):
+  global log
+  global client
+  global lock
+  global data
+  try:
+    log.debug("=start function=")
+    # Нужно выйти из комнаты:
+    log.info("Leave from room: '%s'"%(room_id))
+    response = client.api.leave_room(room_id)
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    log.error("error leave room: '%s'"%(room_id))
+    return False
+  try:
+    # И забыть её:
+    log.info("Forgot room: '%s'"%(room_id))
+    response = client.api.forget_room(room_id)
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    log.error("error forgot room: '%s'"%(room_id))
+    return False
+  return True
+    
+def forgot_dialog(room_id):
+  global log
+  global client
+  global lock
+  global data
+  try:
+    log.debug("=start function=")
+    log.debug("close_dialog()")
+    log.debug("Try remove room: '%s' from data"%(room_id))
+    if "rooms" in data:
+      if room_id in data["rooms"]:
+        # удаляем запись об этой комнате из данных:
+        log.info("Remove room: '%s' from data"%room_id)
+        del data["rooms"][room_id]
+        log.info("save state data on disk")
+        mbl.save_data(log,data)
+        log.info("success forgot room '%s'"%(room_id))
+        return True
+      else:
+        log.warning("unknown room '%s'"%room_id)
+    else:
+      log.error("empty data in data_file")
 
+    log.info("do not forget room '%s'"%(room_id))
+    return False
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    log.error("exception at execute forgot_dialog()")
+    return False
+    
 # Called when a message is recieved.
 def on_message(event):
     global client
@@ -55,6 +109,29 @@ def on_message(event):
     if event['type'] == "m.room.member":
         if event['content']['membership'] == "join":
             log.info("{0} joined".format(event['content']['displayname']))
+        # leave:
+        elif event['content']['membership'] == "leave":
+            log.info("{0} leave".format(event['sender']))
+            # close room:
+            log.debug("try lock() before access global data()")
+            # проверяем, что мы остались одни:
+            users = client.rooms[event['room_id']].get_joined_members()
+            if users == None:
+              log.error("room.get_joined_members()")
+              return False
+            users_num = len(users)
+            log.debug("users_num=%d"%users_num)
+            if users_num==1:
+              # мы остались одни - выходим из комнаты:
+              if leave_room(event['room_id']) == False:
+                log.error("leave_room()")
+                return False
+              with lock:
+                log.debug("success lock before process_command()")
+                if forgot_dialog(event['room_id']) == False:
+                  log.warning("forgot_dialog()==False")
+              log.debug("release lock() after access global data")
+        return True
     elif event['type'] == "m.room.message":
         if event['content']['msgtype'] == "m.text":
             reply_to_id=None
@@ -155,7 +232,7 @@ def on_invite(room, event):
           time.sleep(3)
           room_class = client.join_room(room)
           log.debug("success join to room: %s"%room)
-          room_class.send_text("Спасибо за приглашение! Недеюсь быть Вам полезным. :-)")
+          room_class.send_text("Спасибо за приглашение! Недеюсь быть Вам полезным. Для справки наберите: %s help"%conf.bot_command)
           room_class.send_text("Для справки по доступным командам - неберите: '%s help'"%conf.bot_command)
           log.debug("success send 'hello' to room: %s"%room)
           log.info("User '%s' invite me to room: %s and I success join to room"%(user,room))
@@ -167,7 +244,7 @@ def on_invite(room, event):
             if room not in data["rooms"]:
               data["rooms"][room]={}
               data["rooms"][room]["invite_user"]=user
-            mbl.save_data(data)
+            mbl.save_data(log,data)
           log.debug("release lock() after access global data")
         else:
           log.warning("not allowed invite from user: %s - ignore invite"%user)
@@ -209,25 +286,44 @@ def exception_handler(e):
   time.sleep(5)
 
 def main():
-    global client
-    global data
-    global log
-    global lock
+  global client
+  global data
+  global log
+  global lock
 
-    con=None
-    cur=None
+  con=None
+  cur=None
 
-    lock = threading.RLock()
+  lock = threading.RLock()
 
+  log.debug("try lock() before access global data()")
+  with lock:
+    log.debug("success lock() before access global data")
+    data=mbl.load_data(log)
+  log.debug("release lock() after access global data")
+
+  log.info("try init matrix-client")
+  client = matrix_connect()
+  log.info("success init matrix-client")
+  if client == None:
+    log.error("matrix_connect()")
+    return False
+
+  try:
+    log.info("try init listeners")
     client.add_listener(on_message)
     client.add_invite_listener(on_invite)
-
     client.start_listener_thread(exception_handler=exception_handler)
+    log.info("success init listeners")
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    log.error("exception at execute main() at init listeners")
+    sys.exit(1)
 
-    while True:
-      ##################
-      #log.debug("new step")
-      time.sleep(30)
+  while True:
+    ##################
+    #log.debug("new step")
+    time.sleep(30)
 
 if __name__ == '__main__':
   log=logging.getLogger("matrix_redmine_bot")
