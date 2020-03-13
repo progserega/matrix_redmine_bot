@@ -73,10 +73,14 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
     log.debug("cmd=%s"%source_cmd)
     message=source_cmd
 
-  if re.match(r'^%s'%conf.bot_command, message) != None:
+  # имя бота:
+  nick_name=client.api.get_display_name(client.user_id)
+  log.debug("nick_name=%s"%nick_name)
+
+  if re.match(r'^!*%s:* '%nick_name, message) != None:
     # убираем командный префикс:
     log.debug("remove prefix from cmd")
-    message=re.sub('^%s '%conf.bot_command,'', message)
+    message=re.sub('^!*%s:* '%nick_name,'', message)
   else:
     # пользователь обращается НЕ к роботу - пропуск обработки
     log.debug("skip message in public room without our name")

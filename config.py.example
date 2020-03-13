@@ -20,8 +20,6 @@ allow_domains=["matrix.org"]
 # разрешить приглашать бота в комнаты только указанному пользователю MATRIX:
 allow_users=[]
 
-# префикс, по которому бот понимает, что обращаются к нему:
-bot_command="!redmine"
 #======== Redmine =========
 redmine_server="http://redmine.corp.com"
 # redmine_matrix_user
