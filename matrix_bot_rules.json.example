@@ -1,0 +1,44 @@
+{
+  "help":{
+    "aliases":["помощь","!h","1"],
+    "message":"<p><strong>Вас приветствует бот по рассылке диспетчерских уведомлений.</strong></p>\n<p>На данный момент я могу выполнять следующие команды:</p>\n<ul>\n  <li><strong>помощь</strong> (можно набрать иначе: <strong>help</strong> или <strong>!h</strong>) - эта справка</li>\n <li><strong>отчёт</strong> - формирование тестового отчёта</li>\n</ul>\n<p><em>Всего хорошего, с уважением служба ИТ.</em></p>",
+    "message_type":"html",
+    "type":"sys_cmd_cancel"
+  },
+  "отчёт":{
+    "aliases":["2","report"],
+    "message":"Выберите тип отчёта:\n1 - отчёт типа 1\n2 - отчёт типа 2\n3 - возврат в основное меню",
+    "type":"cmd",
+    "answer":{
+      "1":{
+        "message":"Выберите формат отчёта:\n1 - html,\n2 - pdf,\n3 - xlsx",
+        "type":"cmd",
+        "answer":{
+          "1":{
+            "message":"Введите дату:\n1 - за сегодня,\n2 - за вчера,\n3 - за текущий месяц,\n4 - за прошлый месяц\n5 - указать собственный диапазон,\n6 - отмена",
+            "type":"cmd",
+            "set_static_keys":{"param1":"val1","param2":"val2"},
+            "answer":{
+              "5":{
+                "message":"Введите дату в формате ДД.ММ.ГГ",
+                "type":"cmd",
+                "answer":{
+                  "*":{
+                    "set_env":"date_of_report",
+                    "type":"url_to_file",
+                    "url":"http://arm.rs.int/get_html.php?data={date_of_report}"
+                  }
+                }
+              },
+              "6":{
+                "alias":["отмена","cancel"],
+                "message":"Переход в начало меню. Наберите 'помощь' или 'help' для спрвки по командам",
+                "type":"sys_cmd_cancel"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

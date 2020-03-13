@@ -8,10 +8,24 @@ matrix_password="XXXX"
 matrix_device_id="HSDNLQODDX"
 matrix_bot_logic_file = "matrix_bot_rules.json"
 
-#======== ZABBIX =========
-redmine_server="http://redmine.corp.net"
-redmine_user="matrix_redmine_bot"
-redmine_api_access_key="XXXXXXXXXXXXXXXX"
+# файл сохранения промежуточных данных (настройки для комнат):
+data_file="matrix_data_file.json"
+
+# если списки пусты, то бот будет принимать приглашения от всех:
+# если казаны и домены и пользователи, то если совпало хоть одно - то бот примет приглашение, если ни одно из указанных не совпало - то не примет.
+# разрешить приглашать бота в комнаты только MATRIX-пользователям с указанных MATRIX-доменов (хоумсервера) - указать через запятую можно:
+# if list empty - allow invite from all users. 
+# if list not empty - allow invite if any equal
+allow_domains=["matrix.org"]
+# разрешить приглашать бота в комнаты только указанному пользователю MATRIX:
+allow_users=[]
+
+#======== Redmine =========
+redmine_server="http://redmine.corp.com"
+# redmine_matrix_user
+redmine_api_access_key="XXXXXXXXXX"
+# проект по-умолчанию:
+redmine_def_project_id="tech_support_upr"
 
 #========= Global ===========
 

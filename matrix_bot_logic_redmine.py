@@ -30,18 +30,55 @@ from redminelib import Redmine
 
 redmine=None
 
-def ra_init():
+def redmine_new_issue(log,logic,client,room,user,data,message,cmd,project_id=None):
+  if project_id==None:
+    project_id=conf.redmine_def_project_id
+
+  log.debug("message=%s"%message)
+  log.debug("cmd=%s"%cmd)
+  log.debug("project_id=%s"%project_id)
+  return True
+
+
+  issue = redmine.issue.create(
+      project_id=project_id,
+      subject='тестирование вложения через API',
+      description='ошибка с файлом вложения',
+      estimated_hours=4,
+      done_ratio=40,
+      uploads=[{'path': '/home/serega/Nextcloud/work/drsk/matrix_redmine_bot/test.txt',
+        'filename':"test.txt",
+        'description':'тестовое вложение'
+      }]
+      )
+  print(issue)
+  print("issue.id=%d"%issue.id)
+  issue.due_date = datetime.date(2020, 4, 1)
+  issue.save()
+  return True
+
+
+def init(log,redmine_server,redmine_api_access_key):
   global redmine
   try:
-    redmine = Redmine(conf.redmine_server, key=conf.redmine_api_access_key, requests={'verify': False})
+    redmine = Redmine(redmine_server, key=redmine_api_access_key, requests={'verify': False})
   except Exception as e:
     log.error(get_exception_traceback_descr(e))
     return None
   return redmine
 
+def get_user_id_by_name(log,redmine_user_name):
+  global redmine
+  user = redmine.user.filter(name=redmine_user_name)
+  if user==None:
+    log.warning("redmine.user.filter(name=%s)"%redmine_user_name)
+    return None
+  else:
+    return user.id;
+
 def redmine_test(log):
   global redmine
-  ra_init()
+  init(log,conf.redmine_server,conf.redmine_api_access_key):
 
 #ret=redmine.enumeration.get(1, resource='issue_priorities').value()
   ret=redmine.enumeration.get(1, resource='issue_priorities')

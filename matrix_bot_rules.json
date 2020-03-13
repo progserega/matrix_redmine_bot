@@ -1,0 +1,34 @@
+{
+  "help":{
+    "aliases":["помощь","!h","1"],
+    "message":"<p><strong>Вас приветствует бот Redmine.</strong></p>\n<p>На данный момент я могу выполнять следующие команды:</p>\n <p><em>(Перед каждой командой нужно вводить восклицательный знак и имя робота, например: !redmine help)</em></p> \n <ol>\n  <li><strong>помощь</strong> (можно набрать иначе: <strong>help</strong> - эта справка</li>\n <li><strong>имя</strong> - связать текущую команту с с redmine-логином для получения индивидуальных уведомлений</li><li></ol><p><em>Всего хорошего, с уважением служба ИТ.</em></p>",
+    "message_type":"html",
+    "type":"sys_cmd_cancel"
+  },
+  "привет":{
+    "aliases":["эй","hello","хай","прив","привет!","hello!"],
+    "message":"Привет!\nТоже рад Вас слышать!\nДля справки наберите 'помощь'.\nВсего наилучшего, с уважением служба ИТ",
+    "message_type":"text",
+    "type":"sys_cmd_cancel"
+  },
+  "version":{
+    "aliases":["4","redmine","ver","версия"],
+    "type":"redmine_get_version"
+  },
+  "имя":{
+    "aliases":["2","name"],
+    "message":"<strong>Настройка фильтрации</strong><br>Введите ваш login в системе Redmine, чтобы робот отображал текущие задачи для вас",
+    "message_type":"html",
+    "type":"cmd",
+    "answer":{
+      "*":{
+        "set_env":"redmine_login",
+        "type":"redmine_check_login"
+        }
+     }
+  },
+  "bug":{
+    "aliases":["3","ошибка","issue"],
+    "type":"redmine_new_issue"
+    }
+}
