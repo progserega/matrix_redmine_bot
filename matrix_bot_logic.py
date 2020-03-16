@@ -122,8 +122,8 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         return False
       return True
 
-    words=message.split()
-    if len(words)> 0 and check_equal_cmd(state,words[0].lower(),cmd) or cmd == "*":
+    cmd_words=message.split(' ')
+    if len(cmd_words)> 0 and check_equal_cmd(state,cmd_words[0].lower(),cmd) or cmd == "*":
       data=state[cmd]
       # Шлём стандартное для этого состояния сообщение:
       if "message" in data:
@@ -226,6 +226,29 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
       if data["type"]=="redmine_new_issue":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
+
+        log.debug("len=%d"%len(message))
+        # разбор строки:
+        if len(cmd_words)==1:
+          text="""Необходимо добавить тему и, возможно, описание ошибки. Например:
+  %(redmine_nick)s bug тема ошибки
+или:
+  %(redmine_nick)s bug "тема ошибки" "детальное описание ошибки"
+
+При этом алиасом для "bug" может быть: "ошибка", "issue" или 3
+"""%{"redmine_nick":nick_name}
+
+          if mba.send_message(log,client,room,text) == False:
+            log.error("send_message() to user")
+            return False
+          return True
+          
+          if '"' not in message:
+            # нет кавычек - значит весь текст 
+            pass
+          
+        
+
         return mblr.redmine_new_issue(log,logic,client,room,user,data,message,cmd)
       if data["type"]=="redmine_show_stat":
         log.debug("message=%s"%message)
