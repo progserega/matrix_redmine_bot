@@ -30,12 +30,12 @@ from redminelib import Redmine
 
 redmine=None
 
-def redmine_new_issue(log,logic,client,room,user,data,message,cmd,project_id=None):
+def redmine_new_issue(log,user,subj,descr,project_id=None):
   if project_id==None:
     project_id=conf.redmine_def_project_id
 
-  log.debug("message=%s"%message)
-  log.debug("cmd=%s"%cmd)
+  log.debug("subj=%s"%subj)
+  log.debug("descr=%s"%descr)
   log.debug("project_id=%s"%project_id)
   return True
 

@@ -242,14 +242,24 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             log.error("send_message() to user")
             return False
           return True
-          
-          if '"' not in message:
-            # нет кавычек - значит весь текст 
-            pass
-          
-        
 
-        return mblr.redmine_new_issue(log,logic,client,room,user,data,message,cmd)
+        # базовые настройки для параметров ошибки:
+        if "default_project_id" in data_file["rooms"][room]:
+          project_id=data_file["rooms"][room]["default_project_id"]
+        else:
+          project_id=conf.redmine_def_project_id
+        descr=None
+        subj=None
+        
+        if '"' not in message:
+          # нет кавычек - значит весь текст - тема ошибки:
+          subj=""
+          for w in cmd_words[1:]:
+            subj+=w
+            subj+=" "
+        
+        return mblr.redmine_new_issue(log,user,subj,descr,project_id)
+
       if data["type"]=="redmine_show_stat":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
