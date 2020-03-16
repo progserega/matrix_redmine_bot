@@ -36,6 +36,7 @@ import config as conf
 
 client = None
 log = None
+# Данные текущего состояния бота (настройки комнат), сохраняемые между запусками:
 data={}
 lock = None
 

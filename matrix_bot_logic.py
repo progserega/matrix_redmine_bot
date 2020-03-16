@@ -32,7 +32,10 @@ from requests.exceptions import MissingSchema
 log = None
 logic={}
 lock = None
+
+# состояние стэйт-машины, не сохраняемые между запусками:
 memmory = {}
+data_file= {}
 
 def get_exception_traceback_descr(e):
   tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
@@ -63,6 +66,12 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
   source_message=None
   source_cmd=None
   client=client_class
+
+  # инициализация данных, если для данной комнаты они пусты:
+  if "rooms" not in data_file:
+    data_file["rooms"]={}
+  if room not in data_file["rooms"]:
+    data_file["rooms"][room]={}
 
   if reply_to_id!=None and format_type=="org.matrix.custom.html" and formated_message!=None:
     # разбираем, чтобы получить исходное сообщение и ответ
@@ -113,7 +122,8 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         return False
       return True
 
-    if check_equal_cmd(state,message.lower(),cmd) or cmd == "*":
+    words=message.split()
+    if len(words)> 0 and check_equal_cmd(state,words[0].lower(),cmd) or cmd == "*":
       data=state[cmd]
       # Шлём стандартное для этого состояния сообщение:
       if "message" in data:
@@ -160,6 +170,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         return True
 
       #=========================== redmine =====================================
+      # команда проверки логина:
       if data["type"]=="redmine_check_login":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
@@ -188,12 +199,29 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           return False
         else:
           set_state(room,logic)
-          set_env(room,"redmine_user_id",redmine_user_id)
-          save_data(log)
-          if mba.send_message(log,client,room,"сохранил redmine_login '%s' для вас. Теперь вы будет получать статистику из групп, в которые входит этот пользователь\nВернулся в основное меню"%redmine_login) == False:
+          # запоминаем настройки в данных робота:
+          data_file["rooms"][room]["redmine_user_id"]=redmine_user_id
+          data_file["rooms"][room]["redmine_user_name"]=redmine_user_name
+          save_data(log,data_file)
+          if mba.send_message(log,client,room,"Сохранил redmine_login для этой комнаты. Теперь вы будете \
+получать задачи и уведомления (если захотите) для пользователя redmine %s (url=%s/users/%d).\nВернулся в основное меню"%\
+(redmine_user_name,conf.redmine_server,redmine_user_id)) == False:
             log.error("send_message() to room")
             return False
           return True
+
+      # настройки комнаты:
+      if data["type"]=="redmine_show_room_config":
+        log.debug("message=%s"%message)
+        log.debug("cmd=%s"%cmd)
+        text="Настройки для комнаты:\n<pre><code>"
+        text+=json.dumps(data_file["rooms"][room], indent=4, sort_keys=True,ensure_ascii=False)
+        text+="\n</code></pre>\n"
+        set_state(room,logic)
+        if mba.send_html(log,client,room,text) == False:
+          log.error("send_message() to room")
+          return False
+        return True
           
       if data["type"]=="redmine_new_issue":
         log.debug("message=%s"%message)
@@ -318,7 +346,9 @@ def get_state(log,room):
 def init(log,rule_file,data):
   global logic
   global memmory
+  global data_file
 
+  data_file=data
   try:
     json_data=open(rule_file,"r",encoding="utf-8").read()
   except Exception as e:

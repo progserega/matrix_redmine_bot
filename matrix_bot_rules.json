@@ -11,10 +11,6 @@
     "message_type":"text",
     "type":"sys_cmd_cancel"
   },
-  "version":{
-    "aliases":["4","redmine","ver","версия"],
-    "type":"redmine_get_version"
-  },
   "имя":{
     "aliases":["2","name"],
     "message":"<strong>Настройка фильтрации</strong><br>Введите ваш login в системе Redmine, чтобы робот отображал текущие задачи для вас",
@@ -30,5 +26,9 @@
   "bug":{
     "aliases":["3","ошибка","issue"],
     "type":"redmine_new_issue"
+    },
+  "настройки":{
+    "aliases":["4","pref","settings","конфигурация","настройка"],
+    "type":"redmine_show_room_config"
     }
 }
