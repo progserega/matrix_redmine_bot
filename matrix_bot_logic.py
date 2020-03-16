@@ -333,8 +333,7 @@ def init(log,rule_file,data):
     return False
   return True
 
-def save_data(log):
-  global memmory
+def save_data(log,data):
   log.debug("=start function=")
   log.debug("save to data_file:%s"%conf.data_file)
   try:
@@ -346,19 +345,18 @@ def save_data(log):
     return False
     
   try:
-    data_file.write(json.dumps(memmory, indent=4, sort_keys=True,ensure_ascii=False))
+    data_file.write(json.dumps(data, indent=4, sort_keys=True,ensure_ascii=False))
     #pickle.dump(data,data_file)
     data_file.close()
   except Exception as e:
     log.error(get_exception_traceback_descr(e))
     log.error("json.dump to '%s'"%conf.data_file)
-    print(json.dumps(memmory, indent=4, sort_keys=True,ensure_ascii=False))
+    print(json.dumps(data, indent=4, sort_keys=True,ensure_ascii=False))
     sys.exit(1)
     return False
   return True
 
 def load_data(log):
-  global memmory
   log.debug("=start function=")
   tmp_data_file=conf.data_file
   reset=False
@@ -367,11 +365,11 @@ def load_data(log):
     #data_file = open(tmp_data_file,'rb')
     data_file = open(tmp_data_file,'r')
     try:
-      #memmory=pickle.load(data_file)
-      memmory=json.loads(data_file.read())
+      #data=pickle.load(data_file)
+      data=json.loads(data_file.read())
       data_file.close()
       log.debug("Загрузили файл промежуточных данных: '%s'" % tmp_data_file)
-      if not "rooms" in memmory:
+      if not "rooms" in data:
         log.warning("Битый файл сессии - сброс")
         reset=True
       else:
@@ -380,12 +378,12 @@ def load_data(log):
           backup_name=conf.data_file+'.backup'
           log.info("сохраняем успешно-загруженный файл как '%s'"%backup_name)
           f=open(backup_name,"w+")
-          f.write(json.dumps(memmory, indent=4, sort_keys=True,ensure_ascii=False))
+          f.write(json.dumps(data, indent=4, sort_keys=True,ensure_ascii=False))
           f.close()
         except Exception as e:
           log.error(get_exception_traceback_descr(e))
           log.error("json.dump to '%s'"%conf.data_file)
-          print(json.dumps(memmory, indent=4, sort_keys=True,ensure_ascii=False))
+          print(json.dumps(data, indent=4, sort_keys=True,ensure_ascii=False))
           sys.exit(1)
             
     except Exception as e:
@@ -424,9 +422,9 @@ def load_data(log):
       try:
         backup_name=conf.data_file+'.backup'
         data_file = open(backup_name,'r')
-        memmory=json.loads(data_file.read())
+        data=json.loads(data_file.read())
         data_file.close()
-        if not "rooms" in memmory:
+        if not "rooms" in data:
           log.warning("Битый файл сессии и в файле бэкапа :-( - сброс")
           reset=True
         else:
@@ -438,8 +436,8 @@ def load_data(log):
         reset=True
     if reset:
       log.warning("Сброс промежуточных данных")
-      memmory={}
-      memmory["rooms"]={}
-    save_data(log)
-  #debug_dump_json_to_file("debug_data_as_json.json",memmory)
-  return memmory
+      data={}
+      data["rooms"]={}
+    save_data(log,data)
+  #debug_dump_json_to_file("debug_data_as_json.json",data)
+  return data
