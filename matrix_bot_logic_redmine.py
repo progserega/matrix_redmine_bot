@@ -69,12 +69,19 @@ def init(log,redmine_server,redmine_api_access_key):
 
 def get_user_id_by_name(log,redmine_user_name):
   global redmine
-  user = redmine.user.filter(name=redmine_user_name)
-  if user==None:
-    log.warning("redmine.user.filter(name=%s)"%redmine_user_name)
-    return None
-  else:
-    return user.id;
+  try:
+    users = redmine.user.filter(name=redmine_user_name)
+    if users==None:
+      log.warning("redmine.user.filter(name=%s)"%redmine_user_name)
+      return -2
+    else:
+      if len(users)>1:
+        log.warning("redmine.user.filter(name=%s) - more then 1 result")
+        return -3
+      return users[0].id;
+  except Exception as e:
+    log.error("get_user_id_by_name(): '%s'"%(e))
+    return -1
 
 def redmine_test(log):
   global redmine

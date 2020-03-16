@@ -169,20 +169,27 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
             log.error("send_message() to user")
             return False
+          return False
         redmine_user_id=mblr.get_user_id_by_name(log,redmine_user_name)
-        if redmine_user_id == None:
+        if redmine_user_id == -3:
+          if mba.send_message(log,client,room,"Неуникальное имя - redmine сообщает, что есть нескольколько пользователей с таким логином - попробуйте ещё раз") == False:
+            log.error("send_message() to user")
+            return False
+          return True
+        elif redmine_user_id == -2:
           if mba.send_message(log,client,room,"Некорректный redmine_login - попробуйте ещё раз") == False:
             log.error("send_message() to user")
             return False
           return True
+        elif redmine_user_id == -1:
+          if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
+            log.error("send_message() to user")
+            return False
+          return False
         else:
           set_state(room,logic)
           set_env(room,"redmine_user_id",redmine_user_id)
-          if mblr.redmine_update_hosts_groups_of_user(log,user) == False:
-            log.error('error save groups of room')
-            if mba.send_message(log,client,room,"error save groups of room") == False:
-              log.error("send_message() to room")
-              return False
+          save_data(log)
           if mba.send_message(log,client,room,"сохранил redmine_login '%s' для вас. Теперь вы будет получать статистику из групп, в которые входит этот пользователь\nВернулся в основное меню"%redmine_login) == False:
             log.error("send_message() to room")
             return False
@@ -326,7 +333,8 @@ def init(log,rule_file,data):
     return False
   return True
 
-def save_data(log,data):
+def save_data(log):
+  global memmory
   log.debug("=start function=")
   log.debug("save to data_file:%s"%conf.data_file)
   try:
@@ -338,18 +346,19 @@ def save_data(log,data):
     return False
     
   try:
-    data_file.write(json.dumps(data, indent=4, sort_keys=True,ensure_ascii=False))
+    data_file.write(json.dumps(memmory, indent=4, sort_keys=True,ensure_ascii=False))
     #pickle.dump(data,data_file)
     data_file.close()
   except Exception as e:
     log.error(get_exception_traceback_descr(e))
     log.error("json.dump to '%s'"%conf.data_file)
-    print(json.dumps(data, indent=4, sort_keys=True,ensure_ascii=False))
+    print(json.dumps(memmory, indent=4, sort_keys=True,ensure_ascii=False))
     sys.exit(1)
     return False
   return True
 
 def load_data(log):
+  global memmory
   log.debug("=start function=")
   tmp_data_file=conf.data_file
   reset=False
@@ -358,11 +367,11 @@ def load_data(log):
     #data_file = open(tmp_data_file,'rb')
     data_file = open(tmp_data_file,'r')
     try:
-      #data=pickle.load(data_file)
-      data=json.loads(data_file.read())
+      #memmory=pickle.load(data_file)
+      memmory=json.loads(data_file.read())
       data_file.close()
       log.debug("Загрузили файл промежуточных данных: '%s'" % tmp_data_file)
-      if not "rooms" in data:
+      if not "rooms" in memmory:
         log.warning("Битый файл сессии - сброс")
         reset=True
       else:
@@ -371,12 +380,12 @@ def load_data(log):
           backup_name=conf.data_file+'.backup'
           log.info("сохраняем успешно-загруженный файл как '%s'"%backup_name)
           f=open(backup_name,"w+")
-          f.write(json.dumps(data, indent=4, sort_keys=True,ensure_ascii=False))
+          f.write(json.dumps(memmory, indent=4, sort_keys=True,ensure_ascii=False))
           f.close()
         except Exception as e:
           log.error(get_exception_traceback_descr(e))
           log.error("json.dump to '%s'"%conf.data_file)
-          print(json.dumps(data, indent=4, sort_keys=True,ensure_ascii=False))
+          print(json.dumps(memmory, indent=4, sort_keys=True,ensure_ascii=False))
           sys.exit(1)
             
     except Exception as e:
@@ -415,9 +424,9 @@ def load_data(log):
       try:
         backup_name=conf.data_file+'.backup'
         data_file = open(backup_name,'r')
-        data=json.loads(data_file.read())
+        memmory=json.loads(data_file.read())
         data_file.close()
-        if not "rooms" in data:
+        if not "rooms" in memmory:
           log.warning("Битый файл сессии и в файле бэкапа :-( - сброс")
           reset=True
         else:
@@ -429,8 +438,8 @@ def load_data(log):
         reset=True
     if reset:
       log.warning("Сброс промежуточных данных")
-      data={}
-      data["rooms"]={}
-    save_data(log,data)
-  #debug_dump_json_to_file("debug_data_as_json.json",data)
-  return data
+      memmory={}
+      memmory["rooms"]={}
+    save_data(log)
+  #debug_dump_json_to_file("debug_data_as_json.json",memmory)
+  return memmory
