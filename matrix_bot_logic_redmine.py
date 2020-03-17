@@ -82,14 +82,18 @@ def redmine_new_issue(log,user,subj,descr,project_id=None):
 
 
 def redmine_add_comment(log,user,issue_id,comment):
-# TODO
-  if redmine_user_id != None:
-      log.debug("redmine_user_id=%d"%redmine_user_id)
-      issue.notes='Коментарий 1',
-      issue.save()
-      issue.notes='Коментарий 2',
-      issue.save()
-
+  try:
+    log.debug("redmine_add_comment()")
+    issue = redmine.issue.get(issue_id)
+    if issue == None:
+      log.error("get issue with id=%d"%issue_id)
+      return False
+    issue.notes=comment
+    issue.save()
+    return True
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    return False
   
 def redmine_add_attachment(log,user,issue_id,file_name,file_data):
 # TODO

@@ -37,29 +37,6 @@ lock = None
 memmory = {}
 data_file= {}
 
-def get_exception_traceback_descr(e):
-  tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-  result=""
-  for msg in tb_str:
-    result+=msg
-  return result
-
-def is_room_public(log,client,room):
-  # Проверяем сколько в комнате пользователей. Если более двух - то это не приватный чат и потому не отвечаем на команды:
-  users = client.rooms[room].get_joined_members()
-  if users == None:
-    log.error("room.get_joined_members()")
-    return False
-  users_num = len(users)
-  log.debug("in room %d users"%users_num)
-  if users_num > 2:
-    # публичная комната - не обрабатываем команды:
-    log.debug("this is public room - skip proccess_commands")
-    return True
-  else:
-    log.debug("this is private chat (2 users) - proccess commands")
-    return False
-
 def process_message(log,client_class,user,room,message,formated_message=None,format_type=None,reply_to_id=None,file_url=None,file_type=None):
   global logic
   global memmory
@@ -78,18 +55,25 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
     source_message=re.sub('<mx-reply><blockquote>.*<\/a><br>','', formated_message)
     source_message=re.sub('</blockquote></mx-reply>.*','', source_message)
     source_cmd=re.sub(r'.*</blockquote></mx-reply>','', formated_message.replace('\n',''))
+    # выкусываем обёртку над ником:
+    source_cmd=re.sub(r'^<a href="https://matrix.to/#/@[A-Za-z:\.]*">','',source_cmd)
+    source_cmd=re.sub(r'</a>','',source_cmd)
+
     log.debug("source=%s"%source_message)
     log.debug("cmd=%s"%source_cmd)
-    message=source_cmd
+    message=source_cmd.strip()
 
   # имя бота:
   nick_name=client.api.get_display_name(client.user_id)
   log.debug("nick_name=%s"%nick_name)
 
-  if re.match(r'^!*%s:* '%nick_name, message) != None:
+  if re.match(r'^!*%s:* '%nick_name.lower(), message.lower()) != None:
     # убираем командный префикс:
+    #message=re.sub('^!*%s:* '%nick_name.lower(),'', message)
     log.debug("remove prefix from cmd")
-    message=re.sub('^!*%s:* '%nick_name,'', message)
+    # разделяем только один раз (первое слово), а потом берём "второе слово",
+    # которое содержит всю оставшуюся строку:
+    message=message.split(' ',1)[1]
   else:
     # пользователь обращается НЕ к роботу - пропуск обработки
     log.debug("skip message in public room without our name")
@@ -285,11 +269,69 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
               "issue_id":issue_id\
               }) == False:
             log.error("send_notice() to user %s"%user)
+          
+      if data["type"]=="redmine_add_comment":
+        log.debug("message=%s"%message)
+        log.debug("cmd=%s"%cmd)
+
+        log.debug("len=%d"%len(message))
+        help_text="""Необходимо добавить номер ошибки, к которой добавляете коментарий. Например:
+В ответ на какой-либо коментарий введите:
+  %(redmine_nick)s add 242
+или:
+  %(redmine_nick)s добавь к 242
+И текст этого коментария (или файл) добавится как коментарий (или как вложение) к ошибке с id=242
+
+При этом алиасом для "add" может быть: "5","comment","добавь","добавить","добавьте","приложи","приложить","вложение","коментарий","комментарий"
+"""%{"redmine_nick":nick_name}
+
+        # выкусываем предлоги:
+        new_list=[]
+        for w in cmd_words:
+          if w in ["в", "to", "к", "on", "in"]:
+            log.info("пропускаю предлог: %s"%w)
+          else:
+            new_list.append(w)
+        cmd_words=new_list
+        # разбор строки:
+        if len(cmd_words)==1:
+          if mba.send_message(log,client,room,help_text) == False:
+            log.error("send_message() to user")
+            return False
+          return True
+        else:
+          log.debug(cmd_words)
+          try:
+            issue_id=int(cmd_words[1])
+          except Exception as e:
+            log.warning(get_exception_traceback_descr(e))
+            if mba.send_message(log,client,room,help_text) == False:
+              log.error("send_message() to user")
+              return False
+        comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_message.replace('<br/>','\n'))
+        if mblr.redmine_add_comment(log,user,issue_id,comment_text) == False:
+          log.error("mblr.redmine_add_comment()")
+          return False
+        else:
+          if mba.send_notice(log,client,room,"Успешно добавил коментарий к задаче: %(redmine_server)s/issues/%(issue_id)d"%{\
+              "redmine_server":conf.redmine_server,\
+              "issue_id":issue_id\
+              }) == False:
+            log.error("send_notice() to user %s"%user)
+        return True
 
       if data["type"]=="redmine_show_stat":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
         return mblr.redmine_show_stat(log,logic,client,room,user,data,message,cmd)
+      #=========================== redmine  - конец =====================================
+
+      if data["type"]=="redmine_show_stat":
+        log.debug("message=%s"%message)
+        log.debug("cmd=%s"%cmd)
+        return mblr.redmine_show_stat(log,logic,client,room,user,data,message,cmd)
+
+
       #=========================== redmine  - конец =====================================
 
   if get_state(log,room) == logic:
@@ -530,3 +572,26 @@ def load_data(log):
     save_data(log,data)
   #debug_dump_json_to_file("debug_data_as_json.json",data)
   return data
+
+def get_exception_traceback_descr(e):
+  tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+  result=""
+  for msg in tb_str:
+    result+=msg
+  return result
+
+def is_room_public(log,client,room):
+  # Проверяем сколько в комнате пользователей. Если более двух - то это не приватный чат и потому не отвечаем на команды:
+  users = client.rooms[room].get_joined_members()
+  if users == None:
+    log.error("room.get_joined_members()")
+    return False
+  users_num = len(users)
+  log.debug("in room %d users"%users_num)
+  if users_num > 2:
+    # публичная комната - не обрабатываем команды:
+    log.debug("this is public room - skip proccess_commands")
+    return True
+  else:
+    log.debug("this is private chat (2 users) - proccess commands")
+    return False

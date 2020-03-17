@@ -168,10 +168,18 @@ def on_message(event):
                 return False
         elif event['content']['msgtype'] == "m.image":
           try:
-            file_type=event['content']['info']['mimetype']
-            file_url=event['content']['url']
-          except:
+            if "file" in event['content'] and \
+              "v" in event['content']["file"] and\
+              event['content']["file"]["v"]=="v2":
+
+              file_type=event['content']['info']['mimetype']
+              file_url=event['content']['file']['url']
+            else:
+              file_type=event['content']['info']['mimetype']
+              file_url=event['content']['url']
+          except Exception as e:
             log.error("bad formated event reply - skip")
+            log.error(get_exception_traceback_descr(e))
             mba.send_message(log,client,event['room_id'],"Внутренняя ошибка разбора сообщения - обратитесь к разработчику")
             return False
           log.debug("{0}: {1}".format(event['sender'], event['content']['body']))
