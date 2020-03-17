@@ -94,6 +94,15 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
       log.error("get_state(log,%s)"%room)
       return False
 
+  # получаем уровень прав пользователя:
+  users_power_levels=client.api.get_power_levels(room)
+  # управление ботом для пользователей с уровнем выше или равно "модератор":
+  power_min_level=users_power_levels["ban"]
+  user_can_moderate=False
+  if users_power_levels["users"][user] >= power_min_level:
+    user_can_moderate=True
+    log.debug("user can moderate")
+
   for cmd in state:
     if message.lower() == u"отмена" or message.lower() == "cancel" or message.lower() == "0":
       # Стандартная команда отмены - перехода в начальное меню:
@@ -158,6 +167,15 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
       if data["type"]=="redmine_check_login":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
+
+        # проверка прав пользователя:
+        if user_can_moderate==False:
+          if mba.send_message(log,client,room,"Только пользователь с правами больше или равно, чем 'модератор' может управлять настройками бота.") == False:
+            log.error("send_message() to user")
+            return False
+          set_state(room,logic)
+          return True
+          
         redmine_user_name=get_env(room,"redmine_login")
         if redmine_user_name == None:
           log.error("get_env('redmine_login')")
@@ -280,6 +298,9 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
   %(redmine_nick)s add 242
 или:
   %(redmine_nick)s добавь к 242
+или просто, новое сообщение, как комментарий:
+  %(redmine_nick)s добавь к 242 сам текст комментария
+  
 И текст этого коментария (или файл) добавится как коментарий (или как вложение) к ошибке с id=242
 
 При этом алиасом для "add" может быть: "5","comment","добавь","добавить","добавьте","приложи","приложить","вложение","коментарий","комментарий"
@@ -308,17 +329,90 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             if mba.send_message(log,client,room,help_text) == False:
               log.error("send_message() to user")
               return False
-        comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_message.replace('<br/>','\n'))
-        if mblr.redmine_add_comment(log,user,issue_id,comment_text) == False:
-          log.error("mblr.redmine_add_comment()")
-          return False
+
+        if reply_to_id!=None:
+          # это ответ на сообщение:
+
+          # проверяем тип сообщения, которое процитировал пользователь:
+          rooms=client.get_rooms()
+          room_object=rooms[room]
+          source_event=None
+          comment_text=None
+          for event in room_object.events:
+            if event["event_id"]==reply_to_id:
+              log.debug("исходное сообщение")
+              log.debug(json.dumps(event, indent=4, sort_keys=True,ensure_ascii=False))
+              source_event=event
+              break
+          if source_event==None:
+            log.warning("can not get reply_source_event")
+            if mba.send_message(log,client,room,"Сообщение слишком старое - нет в моём кэше (будет доработано будущем).\nДобавляю только текст из цитирования. Проверьте корректность добавления коментария.") == False:
+              log.error("send_message() to user")
+              return False
+            comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_message.replace('<br/>','\n'))
+          else:
+            # получили цитируемое сообщение, анализируем его тип:
+            url_file=None
+            if source_event['content']['msgtype']=='m.image':
+              if "v" in source_event['content'] and source_event['content']["v"]=="v2":
+                url_file=source_event['content']['file']['url']
+              else:
+                url_file=source_event['content']['url']
+              comment_text="пользователь матрицы %s добавил файл вложения: %s"%(user,source_event["content"]["body"])
+            else:
+              # цитирование текста:
+              comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_event["content"]["body"].replace('<br/>','\n'))
+
         else:
-          if mba.send_notice(log,client,room,"Успешно добавил коментарий к задаче: %(redmine_server)s/issues/%(issue_id)d"%{\
-              "redmine_server":conf.redmine_server,\
-              "issue_id":issue_id\
-              }) == False:
-            log.error("send_notice() to user %s"%user)
-        return True
+          # коментарий дальше в сообщении - после номера:
+
+          # разделяем только один раз (первое слово), а потом берём "второе слово",
+          # которое содержит всю оставшуюся строку:
+          comment_text="уточнение от пользователя матрицы %s:\n\n"%user)
+          for w in cmd_words[2:]:
+            comment_text+=w
+            comment_text+=' '
+
+        if url_file==None:
+          # отправляем простой комментарий:
+          if mblr.redmine_add_comment(log,user,issue_id,comment_text) == False:
+            log.error("mblr.redmine_add_comment()")
+            if mba.send_message(log,client,room,"Внутренняя ошибка бота - не смог добавить комментарий") == False:
+              log.error("send_message() to user")
+              return False
+            return False
+          else:
+            if mba.send_notice(log,client,room,"Успешно добавил коментарий к задаче: %(redmine_server)s/issues/%(issue_id)d"%{\
+                "redmine_server":conf.redmine_server,\
+                "issue_id":issue_id\
+                }) == False:
+              log.error("send_notice() to user %s"%user)
+          return True
+        else:
+          # отправляем вложение:
+          # получаем данные:
+
+          file_data=mba.get_file(log,client,url_file)
+          if file_data==None:
+            log.error("mba.get_file(%s)"%url_file)
+            if mba.send_message(log,client,room,"Внутренняя ошибка бота - не смог скачать вложение") == False:
+              log.error("send_message() to user")
+              return False
+            return False
+
+          if mblr.redmine_add_attachment(log,user,issue_id,comment_text,source_event["content"]["body"],file_data) == False:
+            log.error("mblr.redmine_add_attachment()")
+            if mba.send_message(log,client,room,"Внутренняя ошибка бота - не смог добавить вложение") == False:
+              log.error("send_message() to user")
+              return False
+            return False
+          else:
+            if mba.send_notice(log,client,room,"Успешно добавил вложение к задаче: %(redmine_server)s/issues/%(issue_id)d"%{\
+                "redmine_server":conf.redmine_server,\
+                "issue_id":issue_id\
+                }) == False:
+              log.error("send_notice() to user %s"%user)
+        
 
       if data["type"]=="redmine_show_stat":
         log.debug("message=%s"%message)

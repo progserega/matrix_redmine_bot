@@ -95,25 +95,29 @@ def redmine_add_comment(log,user,issue_id,comment):
     log.error(get_exception_traceback_descr(e))
     return False
   
-def redmine_add_attachment(log,user,issue_id,file_name,file_data):
-# TODO
-  issue = redmine.issue.create(
-      project_id=project_id,
-      subject=subj,
-      description=descr,
-      estimated_hours=4,
-      done_ratio=40,
-      uploads=[{'path': '/home/serega/Nextcloud/work/drsk/matrix_redmine_bot/test.txt',
-        'filename':"test.txt",
-        'description':'тестовое вложение'
+def redmine_add_attachment(log,user,issue_id,comment,file_name,file_data):
+  try:
+    log.debug("redmine_add_attachment()")
+    issue = redmine.issue.get(issue_id)
+    if issue == None:
+      log.error("get issue with id=%d"%issue_id)
+      return False
+    issue.uploads=[{'path': file_data,
+        'filename':file_name,
+        'description':"вложение от пользователя %s"%user
       }]
-      )
+    issue.notes=comment
+    issue.save()
+    return True
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    return False
 
-  print(issue)
-  print("issue.id=%d"%issue.id)
-  issue.due_date = datetime.date(2020, 4, 1)
-  issue.save()
-  return True
+
+#print("issue.id=%d"%issue.id)
+# issue.due_date = datetime.date(2020, 4, 1)
+# issue.save()
+# return True
 
 
 def init(log,redmine_server,redmine_api_access_key):
