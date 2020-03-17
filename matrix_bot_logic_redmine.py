@@ -20,6 +20,7 @@ import json
 import os
 import re
 import requests
+from io import BytesIO
 import traceback
 import matrix_bot_api as mba
 import matrix_bot_logic as mbl
@@ -102,7 +103,7 @@ def redmine_add_attachment(log,user,issue_id,comment,file_name,file_data):
     if issue == None:
       log.error("get issue with id=%d"%issue_id)
       return False
-    issue.uploads=[{'path': file_data,
+    issue.uploads=[{'path': BytesIO(file_data),
         'filename':file_name,
         'description':"вложение от пользователя %s"%user
       }]

@@ -330,6 +330,8 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
               log.error("send_message() to user")
               return False
 
+        comment_text=None
+        url_file=None
         if reply_to_id!=None:
           # это ответ на сообщение:
 
@@ -337,7 +339,6 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           rooms=client.get_rooms()
           room_object=rooms[room]
           source_event=None
-          comment_text=None
           for event in room_object.events:
             if event["event_id"]==reply_to_id:
               log.debug("исходное сообщение")
@@ -352,7 +353,6 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_message.replace('<br/>','\n'))
           else:
             # получили цитируемое сообщение, анализируем его тип:
-            url_file=None
             if source_event['content']['msgtype']=='m.image':
               if "v" in source_event['content'] and source_event['content']["v"]=="v2":
                 url_file=source_event['content']['file']['url']
@@ -368,7 +368,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
 
           # разделяем только один раз (первое слово), а потом берём "второе слово",
           # которое содержит всю оставшуюся строку:
-          comment_text="уточнение от пользователя матрицы %s:\n\n"%user)
+          comment_text="уточнение от пользователя матрицы %s:\n\n"%user
           for w in cmd_words[2:]:
             comment_text+=w
             comment_text+=' '
