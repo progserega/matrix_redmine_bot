@@ -274,7 +274,17 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             for w in clear_param_list[1:]:
               descr+=w
               descr+=" "
-        return mblr.redmine_new_issue(log,user,subj,descr,project_id)
+        issue_id=mblr.redmine_new_issue(log,user,subj,descr,project_id)
+        if issue_id==None:
+          if mba.send_message(log,client,room,"Ошибка заведения задачи") == False:
+            log.error("send_message() to user")
+            return False
+        else:
+          if mba.send_notice(log,client,room,u"создал задачу: %(redmine_server)s/issues/%(issue_id)d"%{\
+              "redmine_server":conf.redmine_server,\
+              "issue_id":issue_id\
+              }) == False:
+            log.error("send_notice() to user %s"%user)
 
       if data["type"]=="redmine_show_stat":
         log.debug("message=%s"%message)

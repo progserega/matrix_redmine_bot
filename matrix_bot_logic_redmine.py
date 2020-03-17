@@ -31,19 +31,72 @@ from redminelib import Redmine
 redmine=None
 
 def redmine_new_issue(log,user,subj,descr,project_id=None):
-  if project_id==None:
-    project_id=conf.redmine_def_project_id
+  try:
+    if project_id==None:
+      project_id=conf.redmine_def_project_id
 
-  log.debug("subj=%s"%subj)
-  log.debug("descr=%s"%descr)
-  log.debug("project_id=%s"%project_id)
-  return True
+    log.debug("subj=%s"%subj)
+    log.debug("descr=%s"%descr)
+    log.debug("user=%s"%user)
+    log.debug("project_id=%s"%project_id)
+
+    # пробуем подобрать пользователя redmine:
+    redmine_login=None
+    if user in conf.redmine_login_alias:
+      redmine_login=conf.redmine_login_alias[user]
+    elif conf.redmine_login_auto_find == True:
+      # пытаемся подобрать по имени в matrix:
+      redmine_login=re.sub('^@','', user)
+      redmine_login=re.sub(':.*','', redmine_login)
+      log.debug("matrix_login=%s"%redmine_login)
+
+    redmine_user_id=None
+    if redmine_login != None:
+      redmine_user_id=get_user_id_by_name(log,redmine_login)
+      if redmine_user_id < 0:
+        log.warning("can not find user with login='%s' in redmine"%redmine_login)
+        redmine_user_id=None
+
+    if redmine_user_id != None:
+      issue = redmine.issue.create(
+        project_id=project_id,
+        subject=subj,
+        description=descr,
+        watcher_user_ids=[redmine_user_id]
+        )
+    else:
+      # добавляем автора в описание задачи:
+      descr+="\n\nЗадачу добавил пользователь матрицы: %s"%user
+      issue = redmine.issue.create(
+        project_id=project_id,
+        subject=subj,
+        description=descr
+        )
 
 
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    return None
+
+  return issue.id
+
+
+def redmine_add_comment(log,user,issue_id,comment):
+# TODO
+  if redmine_user_id != None:
+      log.debug("redmine_user_id=%d"%redmine_user_id)
+      issue.notes='Коментарий 1',
+      issue.save()
+      issue.notes='Коментарий 2',
+      issue.save()
+
+  
+def redmine_add_attachment(log,user,issue_id,file_name,file_data):
+# TODO
   issue = redmine.issue.create(
       project_id=project_id,
-      subject='тестирование вложения через API',
-      description='ошибка с файлом вложения',
+      subject=subj,
+      description=descr,
       estimated_hours=4,
       done_ratio=40,
       uploads=[{'path': '/home/serega/Nextcloud/work/drsk/matrix_redmine_bot/test.txt',
@@ -51,6 +104,7 @@ def redmine_new_issue(log,user,subj,descr,project_id=None):
         'description':'тестовое вложение'
       }]
       )
+
   print(issue)
   print("issue.id=%d"%issue.id)
   issue.due_date = datetime.date(2020, 4, 1)
