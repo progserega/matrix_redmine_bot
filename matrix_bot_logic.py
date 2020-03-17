@@ -248,16 +248,32 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           project_id=data_file["rooms"][room]["default_project_id"]
         else:
           project_id=conf.redmine_def_project_id
-        descr=None
-        subj=None
+        descr=""
+        subj=""
+        params=""
+        for w in cmd_words[1:]:
+          params+=w
+          params+=" "
+
+        log.debug("params=%s"%params)
         
-        if '"' not in message:
+        if '"' not in params:
           # нет кавычек - значит весь текст - тема ошибки:
-          subj=""
-          for w in cmd_words[1:]:
-            subj+=w
-            subj+=" "
-        
+          subj=params
+        else:
+          param_list=params.split('"')
+          log.debug(param_list)
+          clear_param_list=[]
+          for p in param_list:
+            if len(p.strip())>0:
+              clear_param_list.append(p.strip())
+          log.debug(clear_param_list)
+          if len(clear_param_list)>0:
+            subj=clear_param_list[0]
+          if len(clear_param_list)>1:
+            for w in clear_param_list[1:]:
+              descr+=w
+              descr+=" "
         return mblr.redmine_new_issue(log,user,subj,descr,project_id)
 
       if data["type"]=="redmine_show_stat":
