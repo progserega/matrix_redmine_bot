@@ -163,7 +163,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         return True
 
       #=========================== redmine =====================================
-      # команда проверки и сохранения логина:
+      #===== команда проверки и сохранения логина: =====
       if data["type"]=="redmine_check_login":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
@@ -212,7 +212,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             return False
           return True
 
-      # команда установки настройки проекта по-умолчанию:
+      #===== команда установки настройки проекта по-умолчанию: =====
       if data["type"]=="redmine_set_def_project":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
@@ -234,10 +234,14 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           return False
 
         redmine_project_id_list=redmine_project_ids.split(',')
+        # чистим пробелы:
+        tmp_list=[]
+        for p in redmine_project_id_list:
+          tmp_list.append(p.strip())
+        redmine_project_id_list=tmp_list
 
-
+        # проверяем все идентификаторы на корректность:
         for redmine_project_id in redmine_project_id_list:
-          # проверяем все идентификаторы на корректность:
           ret=mblr.check_project_exist(log,redmine_project_id)
           if ret == False:
             if mba.send_message(log,client,room,"Некорректный идентификатор проекта '%s' - попробуйте ещё раз"%redmine_project_id) == False:
@@ -256,7 +260,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           data_file["rooms"][room]["redmine_def_project_id"]=redmine_project_id_list
           save_data(log,data_file)
 
-          text_message="Сохранил идентификатор(ы) проекта для этой комнаты. Задачи из этой комнаты будут создаваться в проекте:\n"
+          text_message="Сохранил идентификатор(ы) проекта для этой комнаты. Задачи из этой комнаты будут создаваться в проекте (или одном из проектов, если их несколько):\n"
           for redmine_project_id in redmine_project_id_list:
             text_message+="%s/projects/%s\n"%(conf.redmine_server,redmine_project_id)
           text_message+="Вернулся в основное меню"
@@ -265,7 +269,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             return False
           return True
 
-      # настройки комнаты:
+      #=== команда  настройки комнаты: ====
       if data["type"]=="redmine_show_room_config":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
@@ -278,11 +282,19 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           return False
         return True
           
+      #=== команда новой ошибки: ====
       if data["type"]=="redmine_new_issue":
+        # проверяем сохранённые с прошлого раза данные пользователя:
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
+        # проверяем, был ли сохранённый запрос:
+        saved_cmd_words=get_env(room,"cmd_words")
+        if saved_cmd_words!=None:
+          # был:
+          cmd_words=saved_cmd_words
+          log.debug("success restore cmd_words from previouse request")
 
-        log.debug("len=%d"%len(message))
+        log.debug("len cmd_words=%d"%len(cmd_words))
         # разбор строки:
         if len(cmd_words)==1:
           text="""Необходимо добавить тему и, возможно, описание ошибки. Например:
@@ -300,7 +312,64 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
 
         # базовые настройки для параметров ошибки:
         if "redmine_def_project_id" in data_file["rooms"][room]:
-          project_id=data_file["rooms"][room]["redmine_def_project_id"]
+          log.debug("setting redmine_def_project_id exist in room data")
+          # есть настройка для комнаты:
+          if len(data_file["rooms"][room]["redmine_def_project_id"])==1:
+            # один проект в списке:
+            project_id=data_file["rooms"][room]["redmine_def_project_id"][0]
+            log.debug("set project to: %s"%project_id)
+          elif len(data_file["rooms"][room]["redmine_def_project_id"])==0:
+            # пустой список - странно, ну ладно - ставим проект по-умолчанию:
+            project_id=conf.redmine_def_project_id
+            log.debug("empty list :-( - set to default project: %s"%project_id)
+          else:
+            # проектов больше одного - значит придётся спрашивать у пользователя какой использовать:
+            log.debug("many projects")
+            
+            # проверяем, может уже выбрали проект:
+            redmine_project_id_selected_num=get_env(room,"redmine_select_def_project_num")
+            if redmine_project_id_selected_num == None:
+              # ещё не выбирали:
+              log.debug("no env 'redmine_select_def_project_num' - go to state 'select_num_project'")
+
+              # показываем запрос выбора проектов:
+              text_message="<strong>Выберите номер проекта, в который добавлять задачу:</strong><br><em>Не забудьте упомянуть меня перед текстом ответа:</em><code>мой_ник номе_варианта</code><br><ol>"
+              # показываем список текущих проектов:
+              for project_id in data_file["rooms"][room]["redmine_def_project_id"]:
+                text_message+="<li>%s"%project_id
+              text_message+="</ol>"
+              if mba.send_html(log,client,room,text_message) == False:
+                log.error("send_message() to user")
+                return False
+              # сохраняем текущий запрос пользователя (чтобы при повторной попытке не вводить описание ошибки опять):
+              set_env(room,"cmd_words",cmd_words)
+              # результат попалдёт в переменную redmine_select_def_project_num
+              # переходим в состояние опроса номера проекта:
+              set_state(room,data["answer"])
+              return True
+            else:
+              # номер проекта выбрали уже:
+              try:
+                id_num=int(redmine_project_id_selected_num)
+              except:
+                log.warning("user enter not number")
+                if mba.send_message(log,client,room,"Необходимо ввести цифру - номер списка проектов (0 или 'отмена' - для отмены)") == False:
+                  log.error("send_message() to user")
+                  return False
+                return True
+              # номер должен быть не больше числа проектов в списке:
+              if id_num>len(data_file["rooms"][room]["redmine_def_project_id"]):
+                if mba.send_message(log,client,room,"Необходимо ввести цифру - номер списка проектов (0 или 'отмена' - для отмены)") == False:
+                  log.error("send_message() to user")
+                  return False
+                return True
+              project_id=data_file["rooms"][room]["redmine_def_project_id"][id_num-1]
+              log.debug("success select project by num %d = %s"%(id_num-1,project_id))
+              # переводим стэйт-машину в начальное состояние:
+              set_state(room,logic)
+              # сбрасываем память переменных:
+              reset_room_memmory(room)
+              # и начинаем добавлять ошибку
         else:
           project_id=conf.redmine_def_project_id
         descr=""
@@ -465,7 +534,9 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
                 "issue_id":issue_id\
                 }) == False:
               log.error("send_notice() to user %s"%user)
-        
+        # сбрасываем переменные для комнаты:
+        reset_room_memmory(room)
+        return True
 
       if data["type"]=="redmine_show_stat":
         log.debug("message=%s"%message)

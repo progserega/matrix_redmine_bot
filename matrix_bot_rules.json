@@ -25,7 +25,13 @@
   },
   "bug":{
     "aliases":["3","ошибка","issue", "add"],
-    "type":"redmine_new_issue"
+    "type":"redmine_new_issue",
+    "answer":{
+      "*":{
+        "set_env":"redmine_select_def_project_num",
+        "type":"redmine_new_issue"
+        }
+     }
     },
   "настройки":{
     "aliases":["4","pref","settings","конфигурация","настройка"],
