@@ -166,7 +166,8 @@ def on_message(event):
                 log.error("error process command: '%s'"%event['content']['body'])
                 mba.send_message(log,client,event['room_id'],"Внутренняя бота - обратитесь к разработчику")
                 return False
-        elif event['content']['msgtype'] == "m.image":
+        elif event['content']['msgtype'] == "m.image" or \
+          event['content']['msgtype'] == "m.file":
           try:
             if "file" in event['content'] and \
               "v" in event['content']["file"] and\

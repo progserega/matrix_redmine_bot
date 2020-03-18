@@ -475,7 +475,8 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_message.replace('<br/>','\n'))
           else:
             # получили цитируемое сообщение, анализируем его тип:
-            if source_event['content']['msgtype']=='m.image':
+            if source_event['content']['msgtype']=='m.image' or \
+              source_event['content']['msgtype']=='m.file':
               if "v" in source_event['content'] and source_event['content']["v"]=="v2":
                 url_file=source_event['content']['file']['url']
               else:
