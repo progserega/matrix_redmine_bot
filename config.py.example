@@ -10,6 +10,8 @@ matrix_bot_logic_file = "matrix_bot_rules.json"
 
 # файл сохранения промежуточных данных (настройки для комнат):
 data_file="matrix_data_file.json"
+# в случае повреждения файла данных - пробовать загрузить последний бэкап файла, который делался во время последней успешной его загрузки:
+try_recover_data_file_from_last_backup=False
 
 # если списки пусты, то бот будет принимать приглашения от всех:
 # если казаны и домены и пользователи, то если совпало хоть одно - то бот примет приглашение, если ни одно из указанных не совпало - то не примет.
@@ -26,6 +28,13 @@ redmine_server="http://redmine.corp.com"
 redmine_api_access_key="XXXXXXXXXX"
 # проект по-умолчанию:
 redmine_def_project_id="tech_support_upr"
+# Соответствия логинов в matrix логинам в redmine:
+redmine_login_alias={"@anonimous:matrix.ru":"petrov_pp"}
+#redmine_login_alias={}
+# пробовать подбирать логины в redmine по имени пользователя в матрице (без учёта домена).
+# т.е. пользователь matrix "@petrov_dv:matrix.org" будет ассоциирован с пользователем redmine "petrov_dv".
+# если отключить опцию, то пользователи подбираться будут только по ассоциациям (опция redmine_login_alias):
+redmine_login_auto_find=True
 
 #========= Global ===========
 
