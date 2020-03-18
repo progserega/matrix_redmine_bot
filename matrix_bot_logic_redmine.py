@@ -156,8 +156,8 @@ def check_project_exist(log,redmine_project_id):
     else:
       return True
   except Exception as e:
-    log.error("check_project_exist(): '%s'"%(e))
-    return None
+    log.warning("check_project_exist(): '%s'"%(e))
+    return False
 
 def redmine_test(log):
   global redmine
