@@ -163,7 +163,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         return True
 
       #=========================== redmine =====================================
-      # команда проверки логина:
+      # команда проверки и сохранения логина:
       if data["type"]=="redmine_check_login":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
@@ -212,6 +212,48 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             return False
           return True
 
+      # команда установки настройки проекта по-умолчанию:
+      if data["type"]=="redmine_set_def_project":
+        log.debug("message=%s"%message)
+        log.debug("cmd=%s"%cmd)
+
+        # проверка прав пользователя:
+        if user_can_moderate==False:
+          if mba.send_message(log,client,room,"Только пользователь с правами больше или равно, чем 'модератор' может управлять настройками бота.") == False:
+            log.error("send_message() to user")
+            return False
+          set_state(room,logic)
+          return True
+          
+        redmine_project_id=get_env(room,"redmine_project")
+        if redmine_project_id == None:
+          log.error("get_env('redmine_project')")
+          if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
+            log.error("send_message() to user")
+            return False
+          return False
+        ret=mblr.check_project_exist(log,redmine_project_id)
+        if ret == False:
+          if mba.send_message(log,client,room,"Некорректный идентификатор проекта - попробуйте ещё раз") == False:
+            log.error("send_message() to user")
+            return False
+          return True
+        elif ret == None:
+          if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
+            log.error("send_message() to user")
+            return False
+          return False
+        else:
+          set_state(room,logic)
+          # запоминаем настройки в данных робота:
+          data_file["rooms"][room]["redmine_def_project_id"]=redmine_project_id
+          save_data(log,data_file)
+          if mba.send_message(log,client,room,"Сохранил идентификатор проекта для этой комнаты. Задачи из этой комнаты будут создаваться в проекте: %s/projects/%s\nВернулся в основное меню"%\
+(conf.redmine_server,redmine_project_id)) == False:
+            log.error("send_message() to room")
+            return False
+          return True
+
       # настройки комнаты:
       if data["type"]=="redmine_show_room_config":
         log.debug("message=%s"%message)
@@ -246,8 +288,8 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           return True
 
         # базовые настройки для параметров ошибки:
-        if "default_project_id" in data_file["rooms"][room]:
-          project_id=data_file["rooms"][room]["default_project_id"]
+        if "redmine_def_project_id" in data_file["rooms"][room]:
+          project_id=data_file["rooms"][room]["redmine_def_project_id"]
         else:
           project_id=conf.redmine_def_project_id
         descr=""

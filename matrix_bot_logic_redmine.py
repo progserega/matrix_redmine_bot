@@ -146,6 +146,19 @@ def get_user_id_by_name(log,redmine_user_name):
     log.error("get_user_id_by_name(): '%s'"%(e))
     return -1
 
+def check_project_exist(log,redmine_project_id):
+  global redmine
+  try:
+    project = redmine.project.get(redmine_project_id) # redmine_project_id - строка
+    if project==None:
+      log.warning("redmine.project.get(%s)"%redmine_project_id)
+      return False
+    else:
+      return True
+  except Exception as e:
+    log.error("check_project_exist(): '%s'"%(e))
+    return None
+
 def redmine_test(log):
   global redmine
   init(log,conf.redmine_server,conf.redmine_api_access_key)
