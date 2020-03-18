@@ -6,7 +6,7 @@ After=syslog.target network.target nss-lookup.target
 Type=simple
 #Type=forking
 ExecStartPre=/bin/true
-ExecStart=/opt/matrix_redmine/matrix_redmine_bot.py
+ExecStart=/opt/matrix_redmine_bot/matrix_redmine_bot.py
 ExecReload=/bin/true
 KillSignal=SIGTERM
 TimeoutSec=30
@@ -15,7 +15,7 @@ RestartSec=1
 #WatchdogSec=1m
 LimitNOFILE=32768
 
-User=redmine
+User=redmine_bot
 
 # Hardening
 DeviceAllow=/dev/null rw
