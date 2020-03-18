@@ -225,31 +225,42 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           set_state(room,logic)
           return True
           
-        redmine_project_id=get_env(room,"redmine_project")
-        if redmine_project_id == None:
+        redmine_project_ids=get_env(room,"redmine_project")
+        if redmine_project_ids == None:
           log.error("get_env('redmine_project')")
           if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
             log.error("send_message() to user")
             return False
           return False
-        ret=mblr.check_project_exist(log,redmine_project_id)
-        if ret == False:
-          if mba.send_message(log,client,room,"Некорректный идентификатор проекта - попробуйте ещё раз") == False:
-            log.error("send_message() to user")
+
+        redmine_project_id_list=redmine_project_ids.split(',')
+
+
+        for redmine_project_id in redmine_project_id_list:
+          # проверяем все идентификаторы на корректность:
+          ret=mblr.check_project_exist(log,redmine_project_id)
+          if ret == False:
+            if mba.send_message(log,client,room,"Некорректный идентификатор проекта '%s' - попробуйте ещё раз"%redmine_project_id) == False:
+              log.error("send_message() to user")
+              return False
+            return True
+          elif ret == None:
+            if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
+              log.error("send_message() to user")
+              return False
             return False
-          return True
-        elif ret == None:
-          if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
-            log.error("send_message() to user")
-            return False
-          return False
-        else:
+
+          # все првоерили и не вывалились из функции - значит все корректны:
           set_state(room,logic)
           # запоминаем настройки в данных робота:
-          data_file["rooms"][room]["redmine_def_project_id"]=redmine_project_id
+          data_file["rooms"][room]["redmine_def_project_id"]=redmine_project_id_list
           save_data(log,data_file)
-          if mba.send_message(log,client,room,"Сохранил идентификатор проекта для этой комнаты. Задачи из этой комнаты будут создаваться в проекте: %s/projects/%s\nВернулся в основное меню"%\
-(conf.redmine_server,redmine_project_id)) == False:
+
+          text_message="Сохранил идентификатор(ы) проекта для этой комнаты. Задачи из этой комнаты будут создаваться в проекте:\n"
+          for redmine_project_id in redmine_project_id_list:
+            text_message+="%s/projects/%s\n"%(conf.redmine_server,redmine_project_id)
+          text_message+="Вернулся в основное меню"
+          if mba.send_message(log,client,room,text_message) == False:
             log.error("send_message() to room")
             return False
           return True
