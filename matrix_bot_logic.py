@@ -415,17 +415,17 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         log.debug("cmd=%s"%cmd)
 
         log.debug("len=%d"%len(message))
-        help_text="""Необходимо добавить номер ошибки, к которой добавляете коментарий. Например:
-В ответ на какой-либо коментарий введите:
+        help_text="""Необходимо добавить номер ошибки, к которой добавляете комментарий. Например:
+В ответ на какой-либо комментарий введите:
   %(redmine_nick)s add 242
 или:
   %(redmine_nick)s добавь к 242
 или просто, новое сообщение, как комментарий:
   %(redmine_nick)s добавь к 242 сам текст комментария
   
-И текст этого коментария (или файл) добавится как коментарий (или как вложение) к ошибке с id=242
+И текст этого комментария (или файл) добавится как комментарий (или как вложение) к ошибке с id=242
 
-При этом алиасом для "add" может быть: "5","comment","добавь","добавить","добавьте","приложи","приложить","вложение","коментарий","комментарий"
+При этом алиасом для "add" может быть: "5","comment","добавь","добавить","добавьте","приложи","приложить","вложение","комментарий","комментарий"
 """%{"redmine_nick":nick_name}
 
         # выкусываем предлоги:
@@ -469,7 +469,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
               break
           if source_event==None:
             log.warning("can not get reply_source_event")
-            if mba.send_message(log,client,room,"Сообщение слишком старое - нет в моём кэше (будет доработано будущем).\nДобавляю только текст из цитирования. Проверьте корректность добавления коментария.") == False:
+            if mba.send_message(log,client,room,"Сообщение слишком старое - нет в моём кэше (будет доработано будущем).\nДобавляю только текст из цитирования. Проверьте корректность добавления комментария.") == False:
               log.error("send_message() to user")
               return False
             comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_message.replace('<br/>','\n'))
@@ -486,7 +486,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
               comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_event["content"]["body"].replace('<br/>','\n'))
 
         else:
-          # коментарий дальше в сообщении - после номера:
+          # комментарий дальше в сообщении - после номера:
 
           # разделяем только один раз (первое слово), а потом берём "второе слово",
           # которое содержит всю оставшуюся строку:
@@ -496,9 +496,9 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             tmp_text+=w
             tmp_text+=' '
           if len(tmp_text.strip())==0:
-            # пустой коментарий:
+            # пустой комментарий:
             text_message="""Коментарий пуст. Варианты использования команды:<br>
-<code>%(nick_name)s добавь к 273 текст коментария</code><br>
+<code>%(nick_name)s добавь к 273 текст комментария</code><br>
 или процетируйте чужое сообщение с текстом, файлом или изображением и введите:<br>
 <code>%(nick_name)s добавь к 273</code>
 """%{"nick_name":nick_name}
@@ -518,7 +518,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
               return False
             return False
           else:
-            if mba.send_notice(log,client,room,"Успешно добавил коментарий к задаче: %(redmine_server)s/issues/%(issue_id)d"%{\
+            if mba.send_notice(log,client,room,"Успешно добавил комментарий к задаче: %(redmine_server)s/issues/%(issue_id)d"%{\
                 "redmine_server":conf.redmine_server,\
                 "issue_id":issue_id\
                 }) == False:
