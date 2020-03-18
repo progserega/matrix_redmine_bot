@@ -491,9 +491,23 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           # разделяем только один раз (первое слово), а потом берём "второе слово",
           # которое содержит всю оставшуюся строку:
           comment_text="уточнение от пользователя матрицы %s:\n\n"%user
+          tmp_text=""
           for w in cmd_words[2:]:
-            comment_text+=w
-            comment_text+=' '
+            tmp_text+=w
+            tmp_text+=' '
+          if len(tmp_text.strip())==0:
+            # пустой коментарий:
+            text_message="""Коментарий пуст. Варианты использования команды:<br>
+<code>%(nick_name)s добавь к 273 текст коментария</code><br>
+или процетируйте чужое сообщение с текстом, файлом или изображением и введите:<br>
+<code>%(nick_name)s добавь к 273</code>
+"""%{"nick_name":nick_name}
+            if mba.send_html(log,client,room,text_message) == False:
+              log.error("send_message() to user")
+              return False
+            return True
+          else:
+            comment_text+=tmp_text
 
         if url_file==None:
           # отправляем простой комментарий:
