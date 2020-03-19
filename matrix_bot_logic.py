@@ -206,7 +206,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           data_file["rooms"][room]["redmine_user_name"]=redmine_user_name
           save_data(log,data_file)
           if mba.send_message(log,client,room,"Сохранил redmine_login для этой комнаты. Теперь вы будете \
-получать задачи и уведомления (если захотите) для пользователя redmine %s (url=%s/users/%d).\nВернулся в основное меню"%\
+получать задачи и уведомления (если захотите) для пользователя redmine %s: %s/users/%d .\nВернулся в основное меню"%\
 (redmine_user_name,conf.redmine_server,redmine_user_id)) == False:
             log.error("send_message() to room")
             return False
