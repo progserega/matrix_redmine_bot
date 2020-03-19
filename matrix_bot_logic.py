@@ -510,10 +510,16 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
 При этом алиасом для "add" может быть: "5","comment","добавь","добавить","добавьте","приложи","приложить","вложение","комментарий","комментарий"
 """%{"redmine_nick":nick_name}
 
-        # выкусываем предлоги:
+        # выкусываем предлоги только в команде (до первого числа, т.к. потом пойдёт, возможно, сам комментарий, а там предлоги нужны):
         new_list=[]
+        found_num=False
         for w in cmd_words:
-          if w in ["в", "to", "к", "on", "in"]:
+          try:
+            num=int(w)
+            found_num=True
+          except:
+            pass
+          if w in ["в", "to", "к", "on", "in", "на"] and found_num == False:
             log.info("пропускаю предлог: %s"%w)
           else:
             new_list.append(w)
