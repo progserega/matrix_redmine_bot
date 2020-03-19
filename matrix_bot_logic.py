@@ -647,13 +647,13 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         return mblr.redmine_show_stat(log,logic,client,room,user,data,message,cmd)
       #=========================== redmine  - конец =====================================
 
-      if data["type"]=="redmine_show_stat":
-        log.debug("message=%s"%message)
-        log.debug("cmd=%s"%cmd)
-        return mblr.redmine_show_stat(log,logic,client,room,user,data,message,cmd)
+      else:
+        if mba.send_html(log,client,room,"неизвестная команда - наберите для справки по командам: <code>%s help</code>"%nick_name) == False:
+          log.error("send_message() to user")
+          return False
+        return True
+        
 
-
-      #=========================== redmine  - конец =====================================
 
   if get_state(log,room) == logic:
     # Пользователь пишет что попало в самом начале диалога:
