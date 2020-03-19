@@ -409,7 +409,89 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
               "issue_id":issue_id\
               }) == False:
             log.error("send_notice() to user %s"%user)
+        return True
           
+      #==== назначаем задачу на себя ====
+      if data["type"]=="redmine_assign_issue_to_me":
+        log.debug("message=%s"%message)
+        log.debug("cmd=%s"%cmd)
+
+        log.debug("len=%d"%len(message))
+        help_text="""Необходимо добавить номер ошибки, которую Вы назначаете на себя. Например:
+  %(redmine_nick)s my 242
+или:
+  %(redmine_nick)s моя 242
+
+При этом алиасом для "my" может быть: "7","моя","мне","assign","работаю","сделаю", "accept"
+"""%{"redmine_nick":nick_name}
+
+        # выкусываем предлоги:
+        new_list=[]
+        for w in cmd_words:
+          if w in ["в", "to", "к", "on", "in" "на"]:
+            log.info("пропускаю предлог: %s"%w)
+          else:
+            new_list.append(w)
+        cmd_words=new_list
+        # разбор строки:
+        if len(cmd_words)==1:
+          if mba.send_message(log,client,room,help_text) == False:
+            log.error("send_message() to user")
+            return False
+          return True
+        else:
+          log.debug(cmd_words)
+          try:
+            issue_id=int(cmd_words[1])
+          except Exception as e:
+            log.warning(get_exception_traceback_descr(e))
+            if mba.send_message(log,client,room,help_text) == False:
+              log.error("send_message() to user")
+              return False
+
+        # получаем идентификатор пользователя:
+
+        # пробуем подобрать пользователя redmine:
+        redmine_login=None
+        if user in conf.redmine_login_alias:
+          redmine_login=conf.redmine_login_alias[user]
+        elif conf.redmine_login_auto_find == True:
+          # пытаемся подобрать по имени в matrix:
+          redmine_login=re.sub('^@','', user)
+          redmine_login=re.sub(':.*','', redmine_login)
+          log.debug("matrix_login=%s"%redmine_login)
+        else:
+          # опция в конфиге выключена по поводу поиска сопоставления пользователей:
+          if mba.send_message(log,client,room,"Не могу определить ваш Redmine-логин, т.к. опция 'redmine_login_auto_find' в моём конфиг-файле выставлена в False - не смог назначить ошибку на Вас") == False:
+            log.error("send_message() to user")
+            return False
+          return True
+
+        redmine_user_id=mblr.get_user_id_by_name(log,redmine_login)
+        if redmine_user_id < 0:
+          log.warning("can not find user with login='%s' in redmine"%redmine_login)
+          if mba.send_message(log,client,room,"Не могу определить ваш Redmine-логин по имени пользователя в матрице: %s. Либо вы ещё не регистрировались в Redmine, либо, если ваш логин в матрице и логин в Redmine не совпадают - нужно добавить соответствие в моём конфигурационном файле в опции 'redmine_login_alias' (обратитесь к администратору бота)."%redmine_login) == False:
+            log.error("send_message() to user")
+            return False
+          return True
+
+        if mblr.redmine_assign_issue_to_user(log,issue_id,redmine_user_id) == False:
+          log.error("mblr.redmine_assign_to_user()")
+          if mba.send_message(log,client,room,"Внутренняя ошибка бота - не смог назначить ошибку") == False:
+            log.error("send_message() to user")
+            return False
+          return False
+        else:
+          if mba.send_notice(log,client,room,"Успешно назначил ошибку на Вас: %(redmine_server)s/issues/%(issue_id)d"%{\
+              "redmine_server":conf.redmine_server,\
+              "issue_id":issue_id\
+              }) == False:
+            log.error("send_notice() to user %s"%user)
+        # сбрасываем переменные для комнаты:
+        reset_room_memmory(room)
+        return True
+          
+      #====== добавляем комментарий к задаче =====
       if data["type"]=="redmine_add_comment":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)

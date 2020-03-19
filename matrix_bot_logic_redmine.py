@@ -82,6 +82,20 @@ def redmine_new_issue(log,user,subj,descr,project_id=None):
   return issue.id
 
 
+def redmine_assign_issue_to_user(log,issue_id,redmine_user_id):
+  try:
+    log.debug("redmine_assign_issue_to_user()")
+    issue = redmine.issue.get(issue_id)
+    if issue == None:
+      log.error("get issue with id=%d"%issue_id)
+      return False
+    issue.assigned_to_id=redmine_user_id
+    issue.save()
+    return True
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    return False
+ 
 def redmine_add_comment(log,user,issue_id,comment):
   try:
     log.debug("redmine_add_comment()")

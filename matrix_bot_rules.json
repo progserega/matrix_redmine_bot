@@ -52,6 +52,9 @@
         "type":"redmine_set_def_project"
         }
      }
-  }
-
+  },
+  "my":{
+    "aliases":["7","моя","мне","assign","работаю","сделаю", "accept"],
+    "type":"redmine_assign_issue_to_me"
+    }
 }
