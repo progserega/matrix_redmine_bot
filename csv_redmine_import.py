@@ -17,6 +17,7 @@ import csv
 import datetime
 import logging
 import matrix_bot_logic_redmine as rd
+import config as conf
 
 
 def get_status_id_by_list_name(list_name):
@@ -99,12 +100,15 @@ def get_user_id_by_name(user_name):
   return None
 
 def get_date(date):
-  d=date.split('.')
-  return datetime.date(int(d[2]), int(d[1]), int(d[0]))
+  try:
+    d=date.split('.')
+    return datetime.date(int(d[2]), int(d[1]), int(d[0]))
+  except:
+    return None
 
 def main(log):
   num=0
-  rd.ra_init()
+  rd.init(log,conf.redmine_server,conf.redmine_api_access_key)
   f = open(sys.argv[1], newline='')
   csvfile=f.readlines()
 
@@ -174,13 +178,8 @@ def main(log):
     issue.save()
     print("issue.id=%d"%issue.id)
 
-    break
-  
     num+=1
-    if num > 2:
-      break
     print("num=%d"%num)
-    break
     
 #break
 
