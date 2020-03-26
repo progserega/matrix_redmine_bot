@@ -63,6 +63,8 @@ def get_project_id_by_name(name):
     return "arm_bdob"
   elif name=="АРМ Лист осмотра":
     return "arm_inspection_sheet_mobile"
+  elif name=="УСПД":
+    return "uspd"
   else:
     return "tech_support_upr"
 
@@ -172,6 +174,7 @@ def main(log):
       watcher_user_ids=watcher_user_ids
       )
     if assigned_id!=None:
+      log.debug("set issue.assigned_to_id=%d"%assigned_id)
       issue.assigned_to_id=assigned_id
     issue.status_id=get_status_id_by_list_name(line["Статус"])
 #issue.priority_id=get_priority_id_by_name(line["Приоритет"]),
