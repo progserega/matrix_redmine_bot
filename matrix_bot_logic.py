@@ -23,6 +23,7 @@ import re
 import requests
 import matrix_bot_api as mba
 import matrix_bot_logic_redmine as mblr
+import matrix_bot_logic_email as mble
 import config as conf
 from matrix_client.client import MatrixClient
 from matrix_client.api import MatrixRequestError
@@ -163,10 +164,12 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         return True
 
       #=========================== redmine =====================================
-      #===== команда проверки и сохранения логина: =====
-      if data["type"]=="redmine_check_login":
+      #===== команда настройки рассылки: =====
+      if data["type"]=="redmine_set_notify_email":
         log.debug("message=%s"%message)
         log.debug("cmd=%s"%cmd)
+        # по умолчанию сразу выходим в начальное меню:
+        set_state(room,logic)
 
         # проверка прав пользователя:
         if user_can_moderate==False:
@@ -176,41 +179,54 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
           set_state(room,logic)
           return True
           
-        redmine_user_name=get_env(room,"redmine_login")
-        if redmine_user_name == None:
-          log.error("get_env('redmine_login')")
+        # берём почтовый ящик:
+        redmine_notify_email=get_env(room,"redmine_notify_email")
+        if redmine_notify_email == None:
+          log.error("get_env('redmine_notify_email')")
           if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
             log.error("send_message() to user")
             return False
           return False
-        redmine_user_id=mblr.get_user_id_by_name(log,redmine_user_name)
-        if redmine_user_id == -3:
-          if mba.send_message(log,client,room,"Неуникальное имя - redmine сообщает, что есть нескольколько пользователей с таким логином - попробуйте ещё раз") == False:
-            log.error("send_message() to user")
-            return False
-          return True
-        elif redmine_user_id == -2:
-          if mba.send_message(log,client,room,"Некорректный redmine_login - попробуйте ещё раз") == False:
-            log.error("send_message() to user")
-            return False
-          return True
-        elif redmine_user_id == -1:
+
+        # берём пароль от почтового ящика:
+        redmine_notify_email_passwd=get_env(room,"redmine_notify_email_passwd")
+        if redmine_notify_email_passwd == None:
+          log.error("get_env('redmine_notify_email_passwd')")
           if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
             log.error("send_message() to user")
             return False
           return False
-        else:
-          set_state(room,logic)
-          # запоминаем настройки в данных робота:
-          data_file["rooms"][room]["redmine_user_id"]=redmine_user_id
-          data_file["rooms"][room]["redmine_user_name"]=redmine_user_name
-          save_data(log,data_file)
-          if mba.send_message(log,client,room,"Сохранил redmine_login для этой комнаты. Теперь вы будете \
-получать задачи и уведомления (если захотите) для пользователя redmine %s: %s/users/%d .\nВернулся в основное меню"%\
-(redmine_user_name,conf.redmine_server,redmine_user_id)) == False:
-            log.error("send_message() to room")
+
+        # берём сервер почтового ящика:
+        redmine_notify_email_server=get_env(room,"redmine_notify_email_server")
+        if redmine_notify_email_server == None:
+          log.error("get_env('redmine_notify_email_server')")
+          if mba.send_message(log,client,room,"Внутренняя ошибка бота") == False:
+            log.error("send_message() to user")
+            return False
+          return False
+
+        # пробуем получить письма:
+        email=mble.init(log,redmine_notify_email_server,redmine_notify_email,redmine_notify_email_passwd,maildir="inbox", check_cert=False)
+        if email == None:
+          log.warning("check correct user notify options by exec: mble.init(email=%s, email_server=%s, email_passwd=<HIDED>)"%(redmine_notify_email,redmine_notify_email_server))
+          if mba.send_message(log,client,room,"Не смог подключиться к почтовому адресу: email=%s, email_server=%s, email_passwd=<HIDED>. Перехожу в начальное меню. Проверьте параметры рассылки ещё раз."%(redmine_notify_email,redmine_notify_email_server)) == False:
+            log.error("send_message() to user")
             return False
           return True
+
+        # тестовое подключение было успешно - сохраняем настройки рассылки для комнаты:
+
+        # запоминаем настройки в данных робота:
+        data_file["rooms"][room]["redmine_notify_email"]=redmine_notify_email
+        data_file["rooms"][room]["redmine_notify_email_passwd"]=redmine_notify_email_passwd
+        data_file["rooms"][room]["redmine_notify_email_server"]=redmine_notify_email_server
+        save_data(log,data_file)
+        if mba.send_message(log,client,room,"Успешно проверил корректность настроек рассылки и сохранил их для этой комнаты. Теперь Вы будете \
+получать рассылку от Redmine и в эту комнату тоже (а не только на почту).\nВернулся в основное меню") == False:
+          log.error("send_message() to room")
+          return False
+        return True
 
       #===== команда установки настройки проекта по-умолчанию: =====
       if data["type"]=="redmine_set_def_project":
