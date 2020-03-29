@@ -32,6 +32,7 @@ from requests.exceptions import MissingSchema
 import matrix_bot_api as mba
 import matrix_bot_logic as mbl
 import matrix_bot_logic_redmine as mblr
+import matrix_bot_logic_email as mble
 import config as conf
 
 client = None
