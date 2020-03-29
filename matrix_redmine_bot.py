@@ -341,6 +341,37 @@ def main():
   while True:
     ##################
     #log.debug("new step")
+    # отправляем уведомления с почты, если таковые имеются:
+    # TODO
+    for room in data["rooms"]:
+      room_data=data["rooms"][room]
+      if "redmine_notify_email" in room_data and \
+        "redmine_notify_email_passwd" in room_data and \
+        "redmine_notify_email_server" in room_data:
+
+        redmine_notify_email=room_data["redmine_notify_email"]
+        redmine_notify_email_passwd=room_data["redmine_notify_email_passwd"]
+        redmine_notify_email_server=room_data["redmine_notify_email_server"]
+        last_email_timestamp=0
+        last_email_message_id=""
+
+        if "last_email_timestamp" in room_data:
+          last_email_timestamp=room_data["last_email_timestamp"]
+        if "last_email_message_id" in room_data:
+          last_email_message_id=room_data["last_email_message_id"]
+          
+        ret=mble.send_new_notify(log,client,room,last_email_timestamp, last_email_message_id, redmine_notify_email_server, redmine_notify_email, redmine_notify_email_passwd, mailbox="inbox", redmine_sender=conf.redmine_email_return_address):
+        if ret == None:
+          log.error("mble.send_new_notify()")
+          # продолжаем для других комнат
+        else:
+          with lock:
+            log.debug("success lock() before access global data")
+            data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
+            data["rooms"][room]["last_email_message_id"]=ret["last_email_message_id"]
+            mbl.save_data(log,data)
+
+    log.debug("step")
     time.sleep(30)
 
 if __name__ == '__main__':
