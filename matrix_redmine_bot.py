@@ -359,8 +359,10 @@ def main():
           last_email_timestamp=room_data["last_email_timestamp"]
         if "last_email_message_id" in room_data:
           last_email_message_id=room_data["last_email_message_id"]
+
+        log.debug("proccess notify for room=%s, email=%s, last_email_timestamp=%d, last_email_message_id=%s"%(room,redmine_notify_email,last_email_timestamp,last_email_message_id))
           
-        ret=mble.send_new_notify(log,client,room,last_email_timestamp, last_email_message_id, redmine_notify_email_server, redmine_notify_email, redmine_notify_email_passwd, mailbox="inbox", redmine_sender=conf.redmine_email_return_address):
+        ret=mble.send_new_notify(log,client,room,last_email_timestamp, last_email_message_id, redmine_notify_email_server, redmine_notify_email, redmine_notify_email_passwd, mailbox="inbox", redmine_sender=conf.redmine_email_return_address)
         if ret == None:
           log.error("mble.send_new_notify()")
           # продолжаем для других комнат
@@ -370,6 +372,8 @@ def main():
             data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
             data["rooms"][room]["last_email_message_id"]=ret["last_email_message_id"]
             mbl.save_data(log,data)
+            log.debug("succss save new last_email_timestamp and last_email_message_id")
+          log.debug("success unlock() after access global data")
 
     log.debug("step")
     time.sleep(30)

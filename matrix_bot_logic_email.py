@@ -42,6 +42,7 @@ def get_exception_traceback_descr(e):
 
 def init(log,server,login,passwd,maildir="inbox", check_cert=False):
   global client
+  log.debug("start function")
   try:
     if check_cert==False:
       ssl_context = ssl.create_default_context()
@@ -60,6 +61,7 @@ def init(log,server,login,passwd,maildir="inbox", check_cert=False):
   return client
 
 def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_email_message_id, server, login, passwd, mailbox="inbox", redmine_sender="redmine@corp.com"):
+  log.debug("start function")
   result={}
   result["last_email_timestamp"]=last_email_timestamp
   result["last_email_message_id"]=last_email_message_id
@@ -69,13 +71,17 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
       log.error("mail init(server=%s, email=%s, mailbox=%s)"%(server,login,mailbox))
       return None
 
+    log.debug("try search today email from %s"%redmine_sender)
     messages = client.search([u'SINCE', datetime.datetime.now(),'FROM',redmine_sender],'utf8')
     for uid, message_data in client.fetch(messages, 'RFC822').items():
-      print("uid=%d"%uid)
+      log.debug("proccess email with uid=%d"%uid)
       email_message = email.message_from_bytes(message_data[b'RFC822'])
-      subj=decode_header(email_message.get('Subject'))[0][0].decode(subj[0][1])
+
+      subj_encoded=decode_header(email_message.get('Subject'))
+      subj=subj_encoded[0][0].decode(subj_encoded[0][1])
+
       message_id=decode_header(email_message.get('Message-ID'))[0][0]
-      date_str=decode_header(email_message.get('Date')[0][0])
+      date_str=decode_header(email_message.get('Date'))[0][0]
       date_dt=datetime.datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
       message_unix_time=time.mktime(date_dt.timetuple())
 
@@ -85,9 +91,11 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
         # но не отправленные в прошлый раз. Или отправленные, но тогда они отправятся ещё раз :-(
         # но это лучше, чем если бы они не отправились бы вообще. Т.к. вероятность этого мала, то смысла
         # городить (и запоминать) список message_id-ов нет.
+        log.debug("skip previowse last sended email")
         continue
       if message_unix_time < last_email_timestamp:
         # пропускаем более старые сообщения
+        log.debug("skip older emails before previowse last sended email")
         continue
 
       # обрабатываем более новые сообщения:
@@ -108,7 +116,7 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
       decripted_body=body.decode('utf8')
       # отправляем пользователю сообщение:
       # переформатируем почтовое сообщение в нужное сообщение матрицы (оставляем нужную информацию):
-      result_matrix_text=email_message_to_matrix(decripted_body)
+      result_matrix_text=email_message_to_matrix(log,decripted_body)
       if mba.send_message(log, matrix_client, matrix_room,result_matrix_text) == False:
         log.error("mba.send_message()")
         return None
@@ -122,7 +130,8 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
     return None
   return result
 
-def email_message_to_matrix(email_body):
+def email_message_to_matrix(log,email_body):
+  log.debug("start function")
   # TODO
   return email_body
 
