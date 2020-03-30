@@ -439,10 +439,10 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         help_text="""Необходимо добавить номер ошибки, которую Вы назначаете на себя в работу. Например:
   %(redmine_nick)s work 242
 или:
-  %(redmine_nick)s в работе 242
+  %(redmine_nick)s работаю 242
 или:
 
-При этом алиасом для "work" может быть: "8","в работе","работаю","в работу"
+При этом алиасом для "work" может быть: "8", "работаю", "делаю"
 """%{"redmine_nick":nick_name}
 
         # выкусываем предлоги:
@@ -495,15 +495,9 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             return False
           return True
 
-        if mblr.redmine_assign_issue_to_user(log,issue_id,redmine_user_id) == False:
-          log.error("mblr.redmine_assign_to_user()")
-          if mba.send_message(log,client,room,"Внутренняя ошибка бота - не смог назначить ошибку") == False:
-            log.error("send_message() to user")
-            return False
-          return False
-        if mblr.redmine_issue_change_status(log,issue_id,2) == False:
-          log.error("mblr.redmine_issue_change_status(2)")
-          if mba.send_message(log,client,room,"Внутренняя ошибка бота - не смог перевести статус ошибки 'в работу'") == False:
+        if mblr.redmine_issue_assign_and_change_status(log,issue_id,redmine_user_id,2) == False:
+          log.error("mblr.redmine_issue_assign_and_change_status()")
+          if mba.send_message(log,client,room,"Внутренняя ошибка бота - не смог назначить ошибку и перевести статус 'в работу'") == False:
             log.error("send_message() to user")
             return False
           return False

@@ -96,6 +96,21 @@ def redmine_assign_issue_to_user(log,issue_id,redmine_user_id):
     log.error(get_exception_traceback_descr(e))
     return False
 
+def redmine_issue_assign_and_change_status(log,issue_id,redmine_user_id,status_id):
+  try:
+    log.debug("redmine_issue_change_status()")
+    issue = redmine.issue.get(issue_id)
+    if issue == None:
+      log.error("get issue with id=%d"%issue_id)
+      return False
+    issue.assigned_to_id=redmine_user_id
+    issue.status_id=status_id
+    issue.save()
+    return True
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    return False
+
 def redmine_issue_change_status(log,issue_id,status_id):
   try:
     log.debug("redmine_issue_change_status()")
