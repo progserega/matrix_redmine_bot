@@ -84,7 +84,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
     return True
 
   # обработка по логике
-  log.debug("get cmd: %s"%message)
+  log.debug("get cmd: '%s'"%message)
   log.debug("user=%s"%user)
   if user == conf.matrix_username or "@%s:"%conf.matrix_username in user:
     log.debug("message from us - skip")
