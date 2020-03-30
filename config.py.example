@@ -36,6 +36,8 @@ redmine_login_alias={"@anonimous:matrix.ru":"petrov_pp"}
 # если отключить опцию, то пользователи подбираться будут только по ассоциациям (опция redmine_login_alias):
 redmine_login_auto_find=True
 
+# redmine email return address (from):
+redmine_email_return_address="redmine@rsprim.ru"
 #========= Global ===========
 
 log_path_bot="matrix_redmine_bot.log"
