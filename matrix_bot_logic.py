@@ -77,7 +77,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
     log.debug("remove prefix from cmd")
     # разделяем только один раз (первое слово), а потом берём "второе слово",
     # которое содержит всю оставшуюся строку:
-    message=message.split(' ',1)[1]
+    message=message.split(' ',1)[1].strip()
   else:
     # пользователь обращается НЕ к роботу - пропуск обработки
     log.debug("skip message in public room without our name")
