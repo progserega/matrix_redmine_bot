@@ -185,17 +185,23 @@ def email_message_to_matrix(log,email_body):
   main_text_list=main_text_block.split('\n')
   descr=""
   priority=""
+  assigned=""
   for item in main_text_list:
     line=item.strip()
     if "Ошибка #" in line:
-      descr=re.sub('^Ошибка #[0-9]+: ','', line)
+      descr=re.sub('^Ошибка #[0-9]+: ','', line).strip()
       continue
     elif "Приоритет: " in line:
-      priority=re.sub('^\* Приоритет: ','', line)
+      priority=re.sub('^\* Приоритет: ','', line).strip()
+      continue
+    elif "Назначена: " in line:
+      assigned=re.sub('^\* Назначена: ','', line).strip()
       continue
   
   result=""
   result=summary+"<br>"
+  if assigned != "":
+    result+="<strong>Назначена</strong>: "+assigned + "<br>"
   result+="<strong>Описание</strong>: "+descr + "<br>"
   result+="<strong>Комментарий:</strong> "+comment 
   #result+="\nПриоритет: "+priority
