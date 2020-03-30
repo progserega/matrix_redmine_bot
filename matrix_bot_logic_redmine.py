@@ -95,6 +95,20 @@ def redmine_assign_issue_to_user(log,issue_id,redmine_user_id):
   except Exception as e:
     log.error(get_exception_traceback_descr(e))
     return False
+
+def redmine_issue_change_status(log,issue_id,status_id):
+  try:
+    log.debug("redmine_issue_change_status()")
+    issue = redmine.issue.get(issue_id)
+    if issue == None:
+      log.error("get issue with id=%d"%issue_id)
+      return False
+    issue.status_id=status_id
+    issue.save()
+    return True
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    return False
  
 def redmine_add_comment(log,user,issue_id,comment):
   try:
@@ -176,6 +190,8 @@ def check_project_exist(log,redmine_project_id):
 def redmine_test(log):
   global redmine
   init(log,conf.redmine_server,conf.redmine_api_access_key)
+
+  redmine_issue_change_status(log,1,"in_work")
 
 #ret=redmine.enumeration.get(1, resource='issue_priorities').value()
   ret=redmine.enumeration.get(1, resource='issue_priorities')
