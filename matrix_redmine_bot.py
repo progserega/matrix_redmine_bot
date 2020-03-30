@@ -243,8 +243,8 @@ def on_invite(room, event):
           time.sleep(3)
           room_class = client.join_room(room)
           log.debug("success join to room: %s"%room)
-          room_class.send_text("Спасибо за приглашение! Недеюсь быть Вам полезным. Для справки наберите: %s help"%conf.bot_command)
-          room_class.send_text("Для справки по доступным командам - неберите: '%s help'"%conf.bot_command)
+          room_class.send_text("Спасибо за приглашение! Недеюсь быть Вам полезным. Для справки наберите: мой_ник help")
+          room_class.send_text("Для справки по доступным командам - неберите: 'my_nick help'")
           log.debug("success send 'hello' to room: %s"%room)
           log.info("User '%s' invite me to room: %s and I success join to room"%(user,room))
           # Прописываем системную группу для пользователя 
