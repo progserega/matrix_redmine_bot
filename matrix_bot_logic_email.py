@@ -147,7 +147,6 @@ def email_message_to_matrix(log,email_body):
     summary=regex.group(1)
     summary+="%s/issues/%s"%(conf.redmine_server, regex.group(3))
     summary+=regex.group(4)
-    summary+='<br>'
 
   comment=""
   # берём текст комментария:
@@ -175,9 +174,6 @@ def email_message_to_matrix(log,email_body):
         break
   if "<pre>" in comment and "</pre>" not in comment:
     comment+="</pre>"
-
-  print("summary=",summary)
-  print("comment=",comment)
 
   # формируем тело сообщения:
   main_text=""
