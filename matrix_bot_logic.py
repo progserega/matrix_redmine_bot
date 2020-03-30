@@ -103,7 +103,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
   # управление ботом для пользователей с уровнем выше или равно "модератор":
   power_min_level=users_power_levels["ban"]
   user_can_moderate=False
-  if users_power_levels["users"][user] >= power_min_level:
+  if user in users_power_levels["users"] and users_power_levels["users"][user] >= power_min_level:
     user_can_moderate=True
     log.debug("user can moderate")
 
