@@ -117,7 +117,7 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
       # отправляем пользователю сообщение:
       # переформатируем почтовое сообщение в нужное сообщение матрицы (оставляем нужную информацию):
       result_matrix_text=email_message_to_matrix(log,decripted_body)
-      if mba.send_message(log, matrix_client, matrix_room,result_matrix_text) == False:
+      if mba.send_html(log, matrix_client, matrix_room,result_matrix_text) == False:
         log.error("mba.send_message()")
         return None
 
@@ -164,6 +164,18 @@ def email_message_to_matrix(log,email_body):
   if len(comment)>max_comment_size:
     comment=comment[0:max_comment_size]+"..."
 
+  # заменяем форматирование кодовых вставок:
+  if '```' in comment:
+    while True:
+      if '```' in comment:
+        comment=comment.replace('```','<pre>',1)
+      if '```' in comment:
+        comment=comment.replace('```','</pre>',1)
+      if '```' not in comment:
+        break
+  if "<pre>" in comment and "</pre>" not in comment:
+    comment+="</pre>"
+
   print("summary=",summary)
   print("comment=",comment)
 
@@ -183,9 +195,9 @@ def email_message_to_matrix(log,email_body):
       continue
   
   result=""
-  result=summary
-  result+="Описание: "+descr + "\n"
-  result+="Комментарий: "+comment
+  result=summary+"<br>"
+  result+="<strong>Описание</strong>: "+descr + "<br>"
+  result+="<strong>Комментарий:</strong> "+comment 
   #result+="\nПриоритет: "+priority
   return result
 
@@ -258,6 +270,52 @@ def get_today_redmine_emails(log,client,redmine_sender="redmine@corp.com"):
 
 def email_test(log,server,email,passwd):
   global client
+  email_body="""Задача #120 была обновлена (Admin Redmine).
+
+
+Первая вставка кода:
+```        
+  date = (datetime.date.today() - datetime.timedelta(5)).strftime("%d-%b-%Y")
+  #result, data = mail.uid('search', None, '(SENTSINCE {date} FROM "{redmine_sender}")'.format(date=date,redmine_sender=redmine_sender))
+  result, data = mail.uid('search', None, '(FROM "{redmine_sender}")'.format(date=date,redmine_sender=redmine_sender))
+```
+Вторая вставка кода:
+```
+    def email_test(log,server,email,passwd):
+      global client
+      message=""
+      
+      
+      ""
+      ret=init(log,server,email,passwd,maildir="INBOX")
+      if ret == None:
+        log.error("connect()")
+        return False
+      get_today_redmine_emails(log,client,redmine_sender="redmine@rsprim.ru")
+```
+
+----------------------------------------
+Ошибка #120: Внедрить новый Redmine с канбаном
+http://redmine.ru/issues/120#change-407
+
+* Автор: Робот матрицы
+* Статус: В работе
+* Приоритет: Нормальный
+* Назначена: Петров Пётр
+* Категория: 
+* Версия: 
+----------------------------------------
+
+
+
+
+-- 
+Вы получили это уведомление, потому что вы либо подписаны на эту задачу, либо являетесь автором или исполнителем этой задачи.
+Чтобы изменить настройки уведомлений, нажмите здесь: http://redmine.prim.drsk.ru/my/account"""
+  message=email_message_to_matrix(log,email_body)
+  print("message=",message)
+  sys.exit()
+
   ret=init(log,server,email,passwd,maildir="INBOX")
   if ret == None:
     log.error("connect()")
