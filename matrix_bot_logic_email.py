@@ -147,7 +147,7 @@ def email_message_to_matrix(log,email_body):
     summary=regex.group(1)
     summary+="%s/issues/%s"%(conf.redmine_server, regex.group(3))
     summary+=regex.group(4)
-    summary+='\n'
+    summary+='<br>'
 
   comment=""
   # берём текст комментария:
@@ -158,7 +158,7 @@ def email_message_to_matrix(log,email_body):
     else:
       print("item='%s'"%item)
       comment+=line
-      comment+='\n'
+      comment+='<br>'
   comment=comment.strip()
   # обкусываем длинные комментарии:
   if len(comment)>max_comment_size:
