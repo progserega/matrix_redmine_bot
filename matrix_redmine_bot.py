@@ -338,45 +338,50 @@ def main():
     log.error("exception at execute main() at init listeners")
     sys.exit(1)
 
-  while True:
-    ##################
-    #log.debug("new step")
-    # отправляем уведомления с почты, если таковые имеются:
-    # TODO
-    for room in data["rooms"]:
-      room_data=data["rooms"][room]
-      if "redmine_notify_email" in room_data and \
-        "redmine_notify_email_passwd" in room_data and \
-        "redmine_notify_email_server" in room_data:
+  try:
+    while True:
+      ##################
+      #log.debug("new step")
+      # отправляем уведомления с почты, если таковые имеются:
+      # TODO
+      for room in data["rooms"]:
+        room_data=data["rooms"][room]
+        if "redmine_notify_email" in room_data and \
+          "redmine_notify_email_passwd" in room_data and \
+          "redmine_notify_email_server" in room_data:
 
-        redmine_notify_email=room_data["redmine_notify_email"]
-        redmine_notify_email_passwd=room_data["redmine_notify_email_passwd"]
-        redmine_notify_email_server=room_data["redmine_notify_email_server"]
-        last_email_timestamp=0
-        last_email_message_id=""
+          redmine_notify_email=room_data["redmine_notify_email"]
+          redmine_notify_email_passwd=room_data["redmine_notify_email_passwd"]
+          redmine_notify_email_server=room_data["redmine_notify_email_server"]
+          last_email_timestamp=0
+          last_email_message_id=""
 
-        if "last_email_timestamp" in room_data:
-          last_email_timestamp=room_data["last_email_timestamp"]
-        if "last_email_message_id" in room_data:
-          last_email_message_id=room_data["last_email_message_id"]
+          if "last_email_timestamp" in room_data:
+            last_email_timestamp=room_data["last_email_timestamp"]
+          if "last_email_message_id" in room_data:
+            last_email_message_id=room_data["last_email_message_id"]
 
-        log.debug("proccess notify for room=%s, email=%s, last_email_timestamp=%d, last_email_message_id=%s"%(room,redmine_notify_email,last_email_timestamp,last_email_message_id))
-          
-        ret=mble.send_new_notify(log,client,room,last_email_timestamp, last_email_message_id, redmine_notify_email_server, redmine_notify_email, redmine_notify_email_passwd, mailbox="inbox", redmine_sender=conf.redmine_email_return_address)
-        if ret == None:
-          log.error("mble.send_new_notify()")
-          # продолжаем для других комнат
-        else:
-          with lock:
-            log.debug("success lock() before access global data")
-            data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
-            data["rooms"][room]["last_email_message_id"]=ret["last_email_message_id"]
-            mbl.save_data(log,data)
-            log.debug("succss save new last_email_timestamp and last_email_message_id")
-          log.debug("success unlock() after access global data")
+          log.debug("proccess notify for room=%s, email=%s, last_email_timestamp=%d, last_email_message_id=%s"%(room,redmine_notify_email,last_email_timestamp,last_email_message_id))
+            
+          ret=mble.send_new_notify(log,client,room,last_email_timestamp, last_email_message_id, redmine_notify_email_server, redmine_notify_email, redmine_notify_email_passwd, mailbox="inbox", redmine_sender=conf.redmine_email_return_address)
+          if ret == None:
+            log.error("mble.send_new_notify()")
+            # продолжаем для других комнат
+          else:
+            with lock:
+              log.debug("success lock() before access global data")
+              data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
+              data["rooms"][room]["last_email_message_id"]=ret["last_email_message_id"]
+              mbl.save_data(log,data)
+              log.debug("succss save new last_email_timestamp and last_email_message_id")
+            log.debug("success unlock() after access global data")
 
-    log.debug("step")
-    time.sleep(30)
+      log.debug("step")
+      time.sleep(30)
+  except Exception as e:
+    log.error(get_exception_traceback_descr(e))
+    log.error("exception at execute main() at proccess emails")
+    sys.exit(1)
 
 if __name__ == '__main__':
   log=logging.getLogger("matrix_redmine_bot")
