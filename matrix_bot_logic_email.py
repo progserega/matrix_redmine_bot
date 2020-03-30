@@ -132,8 +132,62 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
 
 def email_message_to_matrix(log,email_body):
   log.debug("start function")
-  # TODO
-  return email_body
+
+  max_comment_size=200
+
+  # делим на блоки:
+  blocks=email_body.split('---------------------------------------')
+  # формируем описание:
+  summary=""
+  summary_block=blocks[0]
+  summary_list=summary_block.split('\n')
+  # берём заголовок:
+  regex=re.match('(.*)(#+)([0-9]+)(.*)', summary_list[0])
+  if regex != None:
+    summary=regex.group(1)
+    summary+="%s/issues/%s"%(conf.redmine_server, regex.group(3))
+    summary+=regex.group(4)
+    summary+='\n'
+
+  comment=""
+  # берём текст комментария:
+  for item in summary_list[1:]:
+    line=item.strip()
+    if line == "\n" or line == "":
+      continue
+    else:
+      print("item='%s'"%item)
+      comment+=line
+      comment+='\n'
+  comment=comment.strip()
+  # обкусываем длинные комментарии:
+  if len(comment)>max_comment_size:
+    comment=comment[0:max_comment_size]+"..."
+
+  print("summary=",summary)
+  print("comment=",comment)
+
+  # формируем тело сообщения:
+  main_text=""
+  main_text_block=blocks[1]
+  main_text_list=main_text_block.split('\n')
+  descr=""
+  priority=""
+  for item in main_text_list:
+    line=item.strip()
+    if "Ошибка #" in line:
+      descr=re.sub('^Ошибка #[0-9]+: ','', line)
+      continue
+    elif "Приоритет: " in line:
+      priority=re.sub('^\* Приоритет: ','', line)
+      continue
+  
+  result=""
+  result=summary
+  result+="Описание: "+descr + "\n"
+  result+="Комментарий: "+comment
+  #result+="\nПриоритет: "+priority
+  return result
 
 
 def get_today_redmine_emails(log,client,redmine_sender="redmine@corp.com"):
@@ -209,7 +263,6 @@ def email_test(log,server,email,passwd):
     log.error("connect()")
     return False
   get_today_redmine_emails(log,client,redmine_sender="redmine@rsprim.ru")
-
   
 
 
