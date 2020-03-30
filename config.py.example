@@ -37,7 +37,7 @@ redmine_login_alias={"@anonimous:matrix.ru":"petrov_pp"}
 redmine_login_auto_find=True
 
 # redmine email return address (from):
-redmine_email_return_address="redmine@rsprim.ru"
+redmine_email_return_address="redmine@mail.ru"
 #========= Global ===========
 
 log_path_bot="matrix_redmine_bot.log"
