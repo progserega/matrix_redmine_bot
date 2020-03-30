@@ -64,6 +64,9 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
     log.debug("cmd=%s"%source_cmd)
     message=source_cmd.strip()
 
+  # убираем пробелы по бокам:
+  message=message.strip()
+
   # имя бота:
   nick_name=client.api.get_display_name(client.user_id)
   log.debug("nick_name=%s"%nick_name)
