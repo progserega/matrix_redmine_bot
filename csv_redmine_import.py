@@ -129,6 +129,7 @@ def main(log):
     print("Статус: %s"%line["Статус"])
     print("Приоритет: %s"%line["Приоритет"])
     print("Автор: %s"%line["Автор"])
+    print("Проект: %s"%line["Проект"])
     print("Назначена: %s"%line["Назначена"])
     print("Дата выполнения: %s"%line["Дата выполнения"])
     print("Оценка времени: %s"%line["Оценка времени"])
@@ -159,7 +160,7 @@ def main(log):
     log.info("priority_id=%d"%priority_id)
 
     project_id=get_project_id_by_name(line["Проект"])
-    log.debug("project_id=%s"%project_id)
+    log.debug("new project_id=%s"%project_id)
 
     watcher_user_ids=[]
     if author_id!=None:
