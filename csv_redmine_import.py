@@ -143,16 +143,16 @@ def main(log):
 
     author_id=get_user_id_by_name(line["Автор"])
     if author_id == None:
-      log.error("не смог найти пользователя: %s"%line["Автор"])
+      log.warning("не смог найти пользователя: %s"%line["Автор"])
     else:
-      print("author_id=%d"%author_id)
+      log.info("author_id=%d"%author_id)
     assigned_id=get_user_id_by_name(line["Назначена"])
     if assigned_id == None:
       log.error("не смог найти пользователя: %s"%line["Назначена"])
     else:
-      print("assigned_id=%d"%assigned_id)
+      log.info("assigned_id=%d"%assigned_id)
     priority_id=get_priority_id_by_name(line["Приоритет"]),
-    print("priority_id=%d"%priority_id)
+    log.info("priority_id=%d"%priority_id)
 
     project_id=get_project_id_by_name(line["Проект"])
     log.debug("project_id=%s"%project_id)
@@ -179,10 +179,10 @@ def main(log):
     issue.status_id=get_status_id_by_list_name(line["Статус"])
 #issue.priority_id=get_priority_id_by_name(line["Приоритет"]),
     issue.save()
-    print("issue.id=%d"%issue.id)
+    log.info("issue.id=%d"%issue.id)
 
     num+=1
-    print("num=%d"%num)
+    log.info("num=%d"%num)
     
 #break
 
