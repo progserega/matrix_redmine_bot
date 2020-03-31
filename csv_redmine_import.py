@@ -65,6 +65,10 @@ def get_project_id_by_name(name):
     return "arm_inspection_sheet_mobile"
   elif name=="УСПД":
     return "uspd"
+  elif name=="Служба эксплуатации":
+    return "shemi_sp_v_jpeg"
+  elif name=="Схемы СП в jpeg":
+    return "shemi_sp_v_jpeg"
   else:
     return "tech_support_upr"
 
