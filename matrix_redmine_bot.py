@@ -361,8 +361,10 @@ def main():
           if "last_email_message_ids" in room_data:
             last_email_message_ids=room_data["last_email_message_ids"]
 
-          log.debug("proccess notify for room=%s, email=%s, last_email_timestamp=%d"%(room,redmine_notify_email,last_email_timestamp))
+          log.info("proccess notify for room=%s, email=%s, last_email_timestamp=%d"%(room,redmine_notify_email,last_email_timestamp))
           # выводим все идентификаторы последних писем за последний timestamp:
+          log.debug("last_email_message_ids=")
+          log.debug(last_email_message_ids)
           for item in last_email_message_ids:
             log.debug("last_email_message_id=%s"%item)
             
@@ -375,6 +377,8 @@ def main():
             log.debug(last_email_message_ids)
             log.debug("mble.send_new_notify() ret=")
             log.debug(ret)
+            log.debug("mble.send_new_notify() ret['last_email_message_ids']=")
+            log.debug(ret["last_email_message_ids"])
             if last_email_timestamp != ret["last_email_timestamp"] or last_email_message_ids != ret["last_email_message_ids"]:
               log.debug("previouse: last_email_timestamp=%d (%s)"%(last_email_timestamp,\
                 datetime.fromtimestamp(last_email_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
