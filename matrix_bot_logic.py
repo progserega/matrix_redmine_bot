@@ -891,7 +891,7 @@ def init(log,rule_file,data):
 
 def save_data(log,data):
   log.debug("=start function=")
-  log.debug("save to data_file:%s"%conf.data_file)
+  log.debug("save to data_file: %s"%conf.data_file)
   try:
     #data_file=open(conf.data_file,"wb")
     data_file=open(conf.data_file,"w")
