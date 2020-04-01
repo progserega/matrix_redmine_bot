@@ -345,9 +345,6 @@ def main():
       #log.debug("new step")
       # отправляем уведомления с почты, если таковые имеются:
       for room in data["rooms"]:
-        # FIXME:
-        if room == "!rjQCLdtozAGTEndOsY:rsprim.ru":
-          continue
         room_data=data["rooms"][room]
         if "redmine_notify_email" in room_data and \
           "redmine_notify_email_passwd" in room_data and \
