@@ -60,11 +60,11 @@ def init(log,server,login,passwd,maildir="inbox", check_cert=False):
     return None
   return client
 
-def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_email_message_id, server, login, passwd, mailbox="inbox", redmine_sender="redmine@corp.com"):
+def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_email_message_ids, server, login, passwd, mailbox="inbox", redmine_sender="redmine@corp.com"):
   log.debug("start function")
   result={}
   result["last_email_timestamp"]=last_email_timestamp
-  result["last_email_message_id"]=last_email_message_id
+  result["last_email_message_ids"]=last_email_message_ids
   try:
     client=init(log,server,login,passwd,mailbox, check_cert=False)
     if client == None:
@@ -85,7 +85,7 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
       date_dt=datetime.datetime.strptime(date_str, '%a, %d %b %Y %H:%M:%S %z')
       message_unix_time=time.mktime(date_dt.timetuple())
 
-      if message_unix_time == last_email_timestamp and message_id == last_email_message_id:
+      if message_unix_time == last_email_timestamp and message_id in last_email_message_ids:
         # скорее всего то же самое письмо, что отправляли в прошлый раз последним - пропускаем.
         # эта проверка нужна т.к. теоритически могут быть письма с тем же временем получения,
         # но не отправленные в прошлый раз. Или отправленные, но тогда они отправятся ещё раз :-(
@@ -122,8 +122,12 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
         return None
 
       # сохраняем последние данные сообщения:
-      result["last_email_timestamp"]=message_unix_time
-      result["last_email_message_id"]=message_id
+      if result["last_email_timestamp"]==message_unix_time:
+        # время то же, поэтому добавляем message_id:
+        result["last_email_message_ids"].append(message_id)
+      else:
+        result["last_email_timestamp"]=message_unix_time
+        result["last_email_message_ids"]=[message_id]
 
   except Exception as e:
     log.error(get_exception_traceback_descr(e))

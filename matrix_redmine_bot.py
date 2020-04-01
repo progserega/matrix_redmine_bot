@@ -344,7 +344,6 @@ def main():
       ##################
       #log.debug("new step")
       # отправляем уведомления с почты, если таковые имеются:
-      # TODO
       for room in data["rooms"]:
         room_data=data["rooms"][room]
         if "redmine_notify_email" in room_data and \
@@ -355,33 +354,39 @@ def main():
           redmine_notify_email_passwd=room_data["redmine_notify_email_passwd"]
           redmine_notify_email_server=room_data["redmine_notify_email_server"]
           last_email_timestamp=0
-          last_email_message_id=""
+          last_email_message_ids=[]
 
           if "last_email_timestamp" in room_data:
             last_email_timestamp=room_data["last_email_timestamp"]
-          if "last_email_message_id" in room_data:
-            last_email_message_id=room_data["last_email_message_id"]
+          if "last_email_message_ids" in room_data:
+            last_email_message_ids=room_data["last_email_message_ids"]
 
-          log.debug("proccess notify for room=%s, email=%s, last_email_timestamp=%d, last_email_message_id=%s"%(room,redmine_notify_email,last_email_timestamp,last_email_message_id))
+          log.debug("proccess notify for room=%s, email=%s, last_email_timestamp=%d"%(room,redmine_notify_email,last_email_timestamp))
+          # выводим все идентификаторы последних писем за последний timestamp:
+          for item in last_email_message_ids:
+            log.debug("last_email_message_id=%s"%item)
             
-          ret=mble.send_new_notify(log,client,room,last_email_timestamp, last_email_message_id, redmine_notify_email_server, redmine_notify_email, redmine_notify_email_passwd, mailbox="inbox", redmine_sender=conf.redmine_email_return_address)
+          ret=mble.send_new_notify(log,client,room,last_email_timestamp, last_email_message_ids, redmine_notify_email_server, redmine_notify_email, redmine_notify_email_passwd, mailbox="inbox", redmine_sender=conf.redmine_email_return_address)
           if ret == None:
             log.error("mble.send_new_notify()")
             # продолжаем для других комнат
           else:
-            if last_email_timestamp != ret["last_email_timestamp"] or last_email_message_id != ret["last_email_message_id"]:
-              log.debug("previouse: last_email_timestamp=%d (%s), last_email_message_id=%s"%(last_email_timestamp,\
-                datetime.fromtimestamp(last_email_timestamp).strftime('%Y-%m-%d %H:%M:%S'),\
-                last_email_message_id))
-              log.debug("new: last_email_timestamp=%d (%s), last_email_message_id=%s"%(ret["last_email_timestamp"],\
-                datetime.fromtimestamp(ret["last_email_timestamp"]).strftime('%Y-%m-%d %H:%M:%S'),\
-                ret["last_email_message_id"]))
+            if last_email_timestamp != ret["last_email_timestamp"] or last_email_message_ids != ret["last_email_message_ids"]:
+              log.debug("previouse: last_email_timestamp=%d (%s)"%(last_email_timestamp,\
+                datetime.fromtimestamp(last_email_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
+              for item in last_email_message_ids:
+                log.debug("previouse last_email_message_id=%s"%item)
+
+              log.debug("new: last_email_timestamp=%d (%s)"%(ret["last_email_timestamp"],\
+                datetime.fromtimestamp(ret["last_email_timestamp"]).strftime('%Y-%m-%d %H:%M:%S')))
+              for item in ret["last_email_message_ids"]:
+                log.debug("new last_email_message_id=%s"%item)
               with lock:
                 log.debug("success lock() before access global data")
                 data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
-                data["rooms"][room]["last_email_message_id"]=ret["last_email_message_id"]
+                data["rooms"][room]["last_email_message_ids"]=ret["last_email_message_ids"]
                 mbl.save_data(log,data)
-                log.debug("succss save new last_email_timestamp and last_email_message_id")
+                log.debug("succss save new last_email_timestamp and last_email_message_ids")
               log.debug("success unlock() after access global data")
 
       log.debug("step")
