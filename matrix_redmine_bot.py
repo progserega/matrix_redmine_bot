@@ -388,6 +388,8 @@ def main():
                 mbl.save_data(log,data)
                 log.debug("succss save new last_email_timestamp and last_email_message_ids")
               log.debug("success unlock() after access global data")
+            else:
+              log.debug("no new email messages - skip for this room")
 
       log.debug("step")
       time.sleep(30)

@@ -73,8 +73,13 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
 
     log.debug("try search today email from %s"%redmine_sender)
     messages = client.search([u'SINCE', datetime.datetime.now(),'FROM',redmine_sender],'utf8')
+    all_check_messages=0
+    skip_last_messages=0
+    skip_old_messages=0
+    new_messages=0
     for uid, message_data in client.fetch(messages, 'RFC822').items():
-      log.debug("proccess email with uid=%d"%uid)
+      all_check_messages+=1
+      #log.debug("proccess email with uid=%d"%uid)
       email_message = email.message_from_bytes(message_data[b'RFC822'])
 
       subj_encoded=decode_header(email_message.get('Subject'))
@@ -91,13 +96,16 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
         # но не отправленные в прошлый раз. Или отправленные, но тогда они отправятся ещё раз :-(
         # но это лучше, чем если бы они не отправились бы вообще. Т.к. вероятность этого мала, то смысла
         # городить (и запоминать) список message_id-ов нет.
-        log.debug("skip previowse last sended email")
+        #log.debug("skip previowse last sended email")
+        skip_last_messages+=1
         continue
       if message_unix_time < last_email_timestamp:
         # пропускаем более старые сообщения
-        log.debug("skip older emails before previowse last sended email")
+        #log.debug("skip older emails before previowse last sended email")
+        skip_old_messages+=1
         continue
 
+      new_messages+=1
       # обрабатываем более новые сообщения:
       # получаем телос сообщения:
       if email_message.is_multipart():
@@ -132,6 +140,7 @@ def send_new_notify(log,matrix_client,matrix_room,last_email_timestamp, last_ema
   except Exception as e:
     log.error(get_exception_traceback_descr(e))
     return None
+  log.info("proccess emails result: new=%d, last_sended_skip=%d, old=%d, all=%d"%(new_messages,skip_last_messages,skip_old_messages,all_check_messages))
   return result
 
 def email_message_to_matrix(log,email_body):
