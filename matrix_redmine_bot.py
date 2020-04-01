@@ -366,7 +366,6 @@ def main():
 
           log.info("==========  proccess notify for room=%s, email=%s, last_email_timestamp=%d (%s) =========="%(room,redmine_notify_email,last_email_timestamp,\
             datetime.fromtimestamp(last_email_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
-          ))
           # выводим все идентификаторы последних писем за последний timestamp:
           log.debug("last_email_message_ids=")
           log.debug(last_email_message_ids)
