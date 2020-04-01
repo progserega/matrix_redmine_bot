@@ -383,7 +383,7 @@ def main():
             log.debug(ret)
             log.debug("mble.send_new_notify() ret['last_email_message_ids']=")
             log.debug(ret["last_email_message_ids"])
-            if last_email_timestamp != ret["last_email_timestamp"] or last_email_message_ids != ret["last_email_message_ids"]:
+            if last_email_timestamp != ret["last_email_timestamp"] or last_email_message_ids != ret["last_email_message_ids"] or "last_email_message_ids" not in room_data:
               log.debug("previouse: last_email_timestamp=%d (%s)"%(last_email_timestamp,\
                 datetime.fromtimestamp(last_email_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
               for item in last_email_message_ids:
