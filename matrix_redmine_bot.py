@@ -368,13 +368,20 @@ def main():
             log.error("mble.send_new_notify()")
             # продолжаем для других комнат
           else:
-            with lock:
-              log.debug("success lock() before access global data")
-              data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
-              data["rooms"][room]["last_email_message_id"]=ret["last_email_message_id"]
-              mbl.save_data(log,data)
-              log.debug("succss save new last_email_timestamp and last_email_message_id")
-            log.debug("success unlock() after access global data")
+            if last_email_timestamp != ret["last_email_timestamp"] or last_email_message_id != ret["last_email_message_id"]:
+              log.debug("previouse: last_email_timestamp=%d (%s), last_email_message_id=%s"%(last_email_timestamp,\
+                datetime.fromtimestamp(last_email_timestamp).strftime('%Y-%m-%d %H:%M:%S'),\
+                last_email_message_id))
+              log.debug("new: last_email_timestamp=%d (%s), last_email_message_id=%s"%(ret["last_email_timestamp"],\
+                datetime.fromtimestamp(ret["last_email_timestamp"]).strftime('%Y-%m-%d %H:%M:%S'),\
+                ret["last_email_message_id"]))
+              with lock:
+                log.debug("success lock() before access global data")
+                data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
+                data["rooms"][room]["last_email_message_id"]=ret["last_email_message_id"]
+                mbl.save_data(log,data)
+                log.debug("succss save new last_email_timestamp and last_email_message_id")
+              log.debug("success unlock() after access global data")
 
       log.debug("step")
       time.sleep(30)
