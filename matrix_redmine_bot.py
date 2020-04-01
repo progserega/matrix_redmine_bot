@@ -371,6 +371,10 @@ def main():
             log.error("mble.send_new_notify()")
             # продолжаем для других комнат
           else:
+            log.debug("last_email_message_ids=")
+            log.debug(last_email_message_ids)
+            log.debug("mble.send_new_notify() ret=")
+            log.debug(ret)
             if last_email_timestamp != ret["last_email_timestamp"] or last_email_message_ids != ret["last_email_message_ids"]:
               log.debug("previouse: last_email_timestamp=%d (%s)"%(last_email_timestamp,\
                 datetime.fromtimestamp(last_email_timestamp).strftime('%Y-%m-%d %H:%M:%S')))
