@@ -144,7 +144,8 @@ def on_message(event):
                 reply_to_id=event['content']['m.relates_to']['m.in_reply_to']['event_id']
               except:
                 log.error("bad formated event reply - skip")
-                mba.send_message(log,client,event['room_id'],"Внутренняя ошибка разбора сообщения - обратитесь к разработчику")
+                #mba.send_message(log,client,event['room_id'],"Внутренняя ошибка разбора сообщения - обратитесь к разработчику")
+                log.debug(json.dumps(event, indent=4, sort_keys=True,ensure_ascii=False))
                 return False
             formatted_body=None
             format_type=None
@@ -183,7 +184,8 @@ def on_message(event):
           except Exception as e:
             log.error("bad formated event reply - skip")
             log.error(get_exception_traceback_descr(e))
-            mba.send_message(log,client,event['room_id'],"Внутренняя ошибка разбора сообщения - обратитесь к разработчику")
+            #mba.send_message(log,client,event['room_id'],"Внутренняя ошибка разбора сообщения - обратитесь к разработчику")
+            log.debug(json.dumps(event, indent=4, sort_keys=True,ensure_ascii=False))
             return False
           log.debug("{0}: {1}".format(event['sender'], event['content']['body']))
           log.debug("try lock before mbl.process_message()")
