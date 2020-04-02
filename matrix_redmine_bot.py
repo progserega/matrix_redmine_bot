@@ -141,7 +141,10 @@ def on_message(event):
             if "m.relates_to" in  event['content']:
               # это ответ на сообщение:
               try:
-                reply_to_id=event['content']['m.relates_to']['m.in_reply_to']['event_id']
+                if 'm.in_reply_to' in event['content']['m.relates_to']:
+                  reply_to_id=event['content']['m.relates_to']['m.in_reply_to']['event_id']
+                else:
+                  reply_to_id=event['content']['m.relates_to']['event_id']
               except:
                 log.error("bad formated event reply - skip")
                 #mba.send_message(log,client,event['room_id'],"Внутренняя ошибка разбора сообщения - обратитесь к разработчику")
