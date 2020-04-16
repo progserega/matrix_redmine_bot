@@ -35,6 +35,7 @@ import matrix_bot_logic as mbl
 import matrix_bot_logic_redmine as mblr
 import matrix_bot_logic_email as mble
 import config as conf
+import copy
 
 client = None
 log = None
@@ -349,8 +350,16 @@ def main():
       ##################
       #log.debug("new step")
       # отправляем уведомления с почты, если таковые имеются:
-      for room in data["rooms"]:
-        room_data=data["rooms"][room]
+      data_copy=None
+      with lock:
+        log.debug("success lock() before access global data")
+        # get deep copy:
+        # https://stackoverflow.com/questions/2465921/how-to-copy-a-dictionary-and-only-edit-the-copy
+        data_copy=copy.deepcopy(data)
+      log.debug("release lock() after access global data")
+
+      for room in data_copy["rooms"]:
+        room_data=data_copy["rooms"][room]
         if "redmine_notify_email" in room_data and \
           "redmine_notify_email_passwd" in room_data and \
           "redmine_notify_email_server" in room_data:
@@ -397,10 +406,13 @@ def main():
                 log.debug("new last_email_message_id=%s"%item)
               with lock:
                 log.debug("success lock() before access global data")
-                data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
-                data["rooms"][room]["last_email_message_ids"]=ret["last_email_message_ids"]
-                mbl.save_data(log,data)
-                log.debug("succss save new last_email_timestamp and last_email_message_ids")
+                if room in data["rooms"]:
+                  data["rooms"][room]["last_email_timestamp"]=ret["last_email_timestamp"]
+                  data["rooms"][room]["last_email_message_ids"]=ret["last_email_message_ids"]
+                  mbl.save_data(log,data)
+                  log.debug("succss save new last_email_timestamp and last_email_message_ids")
+                else:
+                  log.debug("room '%s' was removed from data when processed - skip"%room)
               log.debug("success unlock() after access global data")
             else:
               log.debug("no new email messages - skip for this room")
