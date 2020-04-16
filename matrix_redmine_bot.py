@@ -355,7 +355,9 @@ def main():
         log.debug("success lock() before access global data")
         # get deep copy:
         # https://stackoverflow.com/questions/2465921/how-to-copy-a-dictionary-and-only-edit-the-copy
+        log.debug("do deep copy of global data fro mail proccess")
         data_copy=copy.deepcopy(data)
+        log.debug("success do deep copy of global data fro mail proccess")
       log.debug("release lock() after access global data")
 
       for room in data_copy["rooms"]:
