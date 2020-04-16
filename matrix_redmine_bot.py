@@ -222,8 +222,8 @@ def on_invite(room, event):
 
   # Просматриваем сообщения:
   for event_item in event['events']:
-    if event_item['type'] == "m.room.join_rules":
-      if event_item['content']['join_rule'] == "invite":
+    if event_item['type'] == "m.room.member":
+      if event_item['content']['membership'] == "invite":
         user=event_item["sender"]
         # проверка на разрешения:
         allow=False
