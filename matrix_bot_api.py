@@ -20,6 +20,10 @@ import os
 import pickle
 import re
 import requests
+try:
+    from urllib import quote
+except ImportError:
+    from urllib.parse import quote
 
 from matrix_client.client import MatrixClient
 from matrix_client.api import MatrixRequestError
@@ -281,3 +285,16 @@ def get_file(log,client,mxurl):
     log.error("fetch file data from url: %s"%full_url)
     return None
   return data
+
+def get_event(log, client, room_id, event_id):
+  log.debug("=== start function ===")
+  """Perform GET /rooms/$room_id/event/$event_id
+
+  Args:
+      room_id(str): The room ID.
+      event_id(str): The event ID.
+
+  Raises:
+      MatrixRequestError(code=404) if the event is not found.
+  """
+  return client.api._send("GET", "/rooms/{}/event/{}".format(quote(room_id), quote(event_id)))

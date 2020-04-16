@@ -656,12 +656,18 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
               source_event=event
               break
           if source_event==None:
-            log.warning("can not get reply_source_event")
-            if mba.send_message(log,client,room,"Сообщение слишком старое - нет в моём кэше (будет доработано будущем).\nДобавляю только текст из цитирования. Проверьте корректность добавления комментария.") == False:
-              log.error("send_message() to user")
-              return False
-            comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_message.replace('<br/>','\n'))
-          else:
+            log.warning("can not get reply_source_event from room_object.events - try get by messageid")
+            try:
+              source_event=mba.get_event(log, client, room, reply_to_id)
+            except Exception as e:
+              log.error(get_exception_traceback_descr(e))
+              if mba.send_message(log,client,room,"ошибка получения исходного сообщения с event_id=%s - обратитесь к разработчику. Добавляю только текст из цитирования."%reply_to_id) == False:
+                log.error("send_message() to user")
+                return False
+              comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_message.replace('<br/>','\n'))
+              source_event=None
+          if source_event!=None:
+            log.info("success get reply_source_event")
             # получили цитируемое сообщение, анализируем его тип:
             if source_event['content']['msgtype']=='m.image' or \
               source_event['content']['msgtype']=='m.file':
@@ -669,11 +675,12 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
                 url_file=source_event['content']['file']['url']
               else:
                 url_file=source_event['content']['url']
-              comment_text="пользователь матрицы %s добавил файл вложения: %s"%(user,source_event["content"]["body"])
+              comment_text="пользователь матрицы %s добавил в редмайн файл вложения, присланный в чат пользователем %s: %s"%(user, source_event["sender"], source_event["content"]["body"])
             else:
               # цитирование текста:
-              comment_text="уточнение от пользователя матрицы %s:\n\n%s"%(user,source_event["content"]["body"].replace('<br/>','\n'))
-
+              comment_text="пользователь матрицы %s процитировал в редмайн комментарий от пользователя матрицы %s:\n\n%s"%(user, source_event["sender"], source_event["content"]["body"].replace('<br/>','\n'))
+          else:
+            log.warning("can not get reply_source_event")
         else:
           # комментарий дальше в сообщении - после номера:
 
