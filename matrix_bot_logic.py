@@ -737,7 +737,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
             if mba.send_message(log,client,room,"Ошибка добавления вложения в redmine: %s"%mblr.get_error()) == False:
               log.error("send_message() to user")
               return False
-            return False
+            return True
           else:
             if mba.send_notice(log,client,room,"Успешно добавил вложение к задаче: %(redmine_server)s/issues/%(issue_id)d"%{\
                 "redmine_server":conf.redmine_server,\
