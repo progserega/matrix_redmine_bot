@@ -33,6 +33,10 @@ from redminelib import exceptions as RedmineExceptions
 redmine=None
 error_description=""
 
+def get_error():
+  global error_description
+  return error_description
+
 def redmine_new_issue(log,user,subj,descr,project_id=None):
   try:
     if project_id==None:
@@ -142,6 +146,7 @@ def redmine_add_comment(log,user,issue_id,comment):
     return False
   
 def redmine_add_attachment(log,user,issue_id,comment,file_name,file_data):
+  global error_description
   error_description=""
   try:
     log.debug("redmine_add_attachment()")
