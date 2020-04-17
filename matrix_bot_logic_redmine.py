@@ -28,8 +28,10 @@ import config as conf
 from matrix_client.api import MatrixRequestError
 # https://python-redmine.com/resources/index.html
 from redminelib import Redmine
+from redminelib import exceptions as RedmineExceptions
 
 redmine=None
+error_description=""
 
 def redmine_new_issue(log,user,subj,descr,project_id=None):
   try:
@@ -140,6 +142,7 @@ def redmine_add_comment(log,user,issue_id,comment):
     return False
   
 def redmine_add_attachment(log,user,issue_id,comment,file_name,file_data):
+  error_description=""
   try:
     log.debug("redmine_add_attachment()")
     issue = redmine.issue.get(issue_id)
@@ -153,6 +156,10 @@ def redmine_add_attachment(log,user,issue_id,comment,file_name,file_data):
     issue.notes=comment
     issue.save()
     return True
+  except RedmineExceptions.ValidationError as e:
+    error_description="вложение не прошло проверку в redmine: %s"%e
+    log.error(error_description)
+    return False
   except Exception as e:
     log.error(get_exception_traceback_descr(e))
     return False

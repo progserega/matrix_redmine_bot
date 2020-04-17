@@ -734,7 +734,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
 
           if mblr.redmine_add_attachment(log,user,issue_id,comment_text,source_event["content"]["body"],file_data) == False:
             log.error("mblr.redmine_add_attachment()")
-            if mba.send_message(log,client,room,"Внутренняя ошибка бота - не смог добавить вложение") == False:
+            if mba.send_message(log,client,room,"Ошибка добавления вложения в redmine: %s"%mblr.error_description) == False:
               log.error("send_message() to user")
               return False
             return False

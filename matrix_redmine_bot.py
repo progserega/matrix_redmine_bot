@@ -291,9 +291,6 @@ def matrix_connect():
         log.error(e)
         log.debug(e)
         return None
-    except:
-        log.error("unknown error at client.login()")
-        return None
     return client
 
 def exception_handler(e):
