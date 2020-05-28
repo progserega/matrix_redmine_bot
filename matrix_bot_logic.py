@@ -167,6 +167,36 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
         return True
 
       #=========================== redmine =====================================
+
+      #===== команда отключения рассылки: =====
+      if data["type"]=="redmine_unset_notify_email":
+        log.debug("message=%s"%message)
+        log.debug("cmd=%s"%cmd)
+        # по умолчанию сразу выходим в начальное меню:
+        set_state(room,logic)
+
+        # проверка прав пользователя:
+        if user_can_moderate==False:
+          if mba.send_message(log,client,room,"Только пользователь с правами больше или равно, чем 'модератор' может управлять настройками бота.") == False:
+            log.error("send_message() to user")
+            return False
+          set_state(room,logic)
+          return True
+
+        # удаляем настройки рассылки:
+        if "redmine_notify_email" in data_file["rooms"][room]:
+          del data_file["rooms"][room]["redmine_notify_email"]
+        if "redmine_notify_email_passwd" in data_file["rooms"][room]:
+          del data_file["rooms"][room]["redmine_notify_email_passwd"]
+        if "redmine_notify_email_server" in data_file["rooms"][room]:
+          del data_file["rooms"][room]["redmine_notify_email_server"]
+
+        save_data(log,data_file)
+        if mba.send_message(log,client,room,"Успешно отключил Вас от рассылки задач из redmine в этой комнате.\nВернулся в основное меню") == False:
+          log.error("send_message() to room")
+          return False
+        return True
+
       #===== команда настройки рассылки: =====
       if data["type"]=="redmine_set_notify_email":
         log.debug("message=%s"%message)
