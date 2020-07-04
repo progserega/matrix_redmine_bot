@@ -25,6 +25,7 @@ import threading
 #import MySQLdb as mdb
 import traceback
 import requests
+import systemd_watchdog
 
 from matrix_client.client import MatrixClient
 from matrix_client.api import MatrixRequestError
@@ -42,6 +43,8 @@ log = None
 # Данные текущего состояния бота (настройки комнат), сохраняемые между запусками:
 data={}
 lock = None
+wd = None
+wd_timeout = 0
 
 def get_exception_traceback_descr(e):
   tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
@@ -295,9 +298,12 @@ def matrix_connect():
 
 def exception_handler(e):
   global log
+  global wd
   log.error("exception_handler(): main listener thread except. He must retrying...")
   log.error(e)
-  log.info("exception_handler(): wait 5 second before retrying...")
+  if conf.use_watchdog:
+    log.info("send to watchdog error service status")
+    wd.notify_error("An irrecoverable error occured! exception_handler()")
   time.sleep(5)
 
 def main():
@@ -305,9 +311,23 @@ def main():
   global data
   global log
   global lock
+  global wd
+  global wd_timeout
 
   con=None
   cur=None
+
+  # watchdog:
+  if conf.use_watchdog:
+    log.info("init watchdog")
+    wd = systemd_watchdog.watchdog()
+    if not wd.enabled():
+      # Then it's probably not running is systemd with watchdog enabled
+      log.error("Watchdog not enabled in systemdunit, but enabled in bot config!")
+      return False
+    wd.status("Starting my service...")
+    wd_timeout=int(float(wd.timeout) / 1000000)
+    log.info("watchdog timeout=%d"%wd_timeout)
 
   lock = threading.RLock()
 
@@ -341,10 +361,21 @@ def main():
     log.error(get_exception_traceback_descr(e))
     log.error("exception at execute main() at init listeners")
     sys.exit(1)
+  
+  # программа инициализировалась - сообщаем об этом в watchdog:
+  if conf.use_watchdog:
+    wd.ready()
+    wd.status("start main loop")
+    log.debug("watchdog send notify")
+    wd.notify()
 
   try:
     while True:
       ##################
+      # watchdog notify:
+      if conf.use_watchdog:
+        wd.notify()
+
       #log.debug("new step")
       # отправляем уведомления с почты, если таковые имеются:
       data_copy=None
@@ -358,6 +389,10 @@ def main():
       log.debug("release lock() after access global data")
 
       for room in data_copy["rooms"]:
+        # watchdog notify:
+        if conf.use_watchdog:
+          log.debug("watchdog send notify")
+          wd.notify()
         room_data=data_copy["rooms"][room]
         if "redmine_notify_email" in room_data and \
           "redmine_notify_email_passwd" in room_data and \
@@ -416,6 +451,10 @@ def main():
             else:
               log.debug("no new email messages - skip for this room")
 
+      # watchdog notify:
+      if conf.use_watchdog:
+        log.debug("watchdog send notify")
+        wd.notify()
       log.debug("step")
       time.sleep(30)
   except Exception as e:

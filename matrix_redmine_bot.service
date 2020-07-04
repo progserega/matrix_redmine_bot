@@ -10,10 +10,20 @@ ExecStart=/opt/matrix_redmine_bot/matrix_redmine_bot.py
 ExecReload=/bin/true
 KillSignal=SIGTERM
 TimeoutSec=30
-#Restart=on-failure
 RestartSec=1
-#WatchdogSec=1m
 LimitNOFILE=32768
+
+# watchdog:
+WatchdogSec=5m
+Restart=on-failure
+# предельное количество попыток перезапуска:
+StartLimitBurst=15
+# интервал времени, в течение которого они подсчитываются
+StartLimitInterval=60min
+# юнит, который запустится при сбое этого юнита:
+#OnFailure=
+# что делать, если слишком часто сбоит: none, reboot, reboot-force и reboot-immediate
+#StartLimitAction=none
 
 User=redmine_bot
 

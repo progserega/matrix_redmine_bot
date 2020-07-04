@@ -22,6 +22,11 @@ allow_domains=["matrix.org"]
 # разрешить приглашать бота в комнаты только указанному пользователю MATRIX:
 allow_users=[]
 
+#======== Wathcdog ========
+# включить поддержку systemd-watchdog. В этом случае процесс будет отправлять уведомления в systemd и если вдруг
+# они перестанут приходить, то systemd перезапустит сервис https://pypi.org/project/systemd-watchdog/ https://www.lexpr.ru/node/513
+use_watchdog=False
+
 #======== Redmine =========
 redmine_server="http://redmine.corp.com"
 # redmine_matrix_user
@@ -38,8 +43,8 @@ redmine_login_auto_find=True
 
 # redmine email return address (from):
 redmine_email_return_address="redmine@mail.ru"
-#========= Global ===========
 
+#========= Log ===========
 log_path_bot="matrix_redmine_bot.log"
 # how match keep backup log files:
 log_backup_count=30
