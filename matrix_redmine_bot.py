@@ -321,7 +321,7 @@ def main():
   if conf.use_watchdog:
     log.info("init watchdog")
     wd = systemd_watchdog.watchdog()
-    if not wd.enabled():
+    if not wd.is_enabled:
       # Then it's probably not running is systemd with watchdog enabled
       log.error("Watchdog not enabled in systemdunit, but enabled in bot config!")
       return False
