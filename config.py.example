@@ -25,7 +25,7 @@ allow_users=[]
 #======== Wathcdog ========
 # включить поддержку systemd-watchdog. В этом случае процесс будет отправлять уведомления в systemd и если вдруг
 # они перестанут приходить, то systemd перезапустит сервис https://pypi.org/project/systemd-watchdog/ https://www.lexpr.ru/node/513
-use_watchdog=False
+use_watchdog=True
 
 #======== Redmine =========
 redmine_server="http://redmine.corp.com"
