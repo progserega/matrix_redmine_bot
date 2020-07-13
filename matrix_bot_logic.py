@@ -708,7 +708,7 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
               comment_text="пользователь матрицы %s добавил в редмайн файл вложения, присланный в чат пользователем %s: %s"%(user, source_event["sender"], source_event["content"]["body"])
             else:
               # цитирование текста:
-              comment_text="пользователь матрицы %s процитировал в редмайн комментарий от пользователя матрицы %s:\n\n%s"%(user, source_event["sender"], source_event["content"]["body"].replace('<br/>','\n'))
+              comment_text="пользователь матрицы %s процитировал в редмайн комментарий от пользователя матрицы %s:\n\n> %s"%(user, source_event["sender"], source_event["content"]["body"].replace('<br/>','\n'))
           else:
             log.warning("can not get reply_source_event")
         else:
