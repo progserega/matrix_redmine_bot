@@ -303,7 +303,10 @@ def exception_handler(e):
   if conf.use_watchdog:
     log.info("send to watchdog error service status")
     wd.notify_error("An irrecoverable error occured! exception_handler()")
+  log.info("exception_handler(): wait 5 second before programm exit...")
   time.sleep(5)
+  log.info("sys.exit(1)")
+  sys.exit(1)
 
 def main():
   global client
