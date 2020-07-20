@@ -44,6 +44,7 @@ data={}
 lock = None
 wd = None
 wd_timeout = 0
+exit_flag=False
 
 def get_exception_traceback_descr(e):
   tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
@@ -298,12 +299,14 @@ def matrix_connect():
 def exception_handler(e):
   global log
   global wd
+  global exit_flag
   log.error("exception_handler(): main listener thread except. He must retrying...")
   log.error(e)
   if conf.use_watchdog:
     log.info("send to watchdog error service status")
     wd.notify_error("An irrecoverable error occured! exception_handler()")
   log.info("exception_handler(): wait 5 second before programm exit...")
+  exit_flag=True
   time.sleep(5)
   log.info("sys.exit(1)")
   sys.exit(1)
@@ -315,6 +318,7 @@ def main():
   global lock
   global wd
   global wd_timeout
+  global exit_flag
 
   con=None
   cur=None
@@ -372,7 +376,7 @@ def main():
     wd.notify()
 
   try:
-    while True:
+    while exit_flag == False:
       ##################
       # watchdog notify:
       if conf.use_watchdog:
@@ -463,6 +467,10 @@ def main():
     log.error(get_exception_traceback_descr(e))
     log.error("exception at execute main() at proccess emails")
     sys.exit(1)
+  if exit_flag == True:
+    log.error("catch exit_flag==True - error occur - return False")
+    return False
+  return True
 
 if __name__ == '__main__':
   log=logging.getLogger("matrix_redmine_bot")
@@ -495,4 +503,4 @@ if __name__ == '__main__':
   if main()==False:
     log.error("error main()")
     sys.exit(1)
-  log.info("Program exit!")
+  log.info("Program success exit")
