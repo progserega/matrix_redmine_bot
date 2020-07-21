@@ -47,12 +47,15 @@ wd_timeout = 0
 exit_flag=False
 
 def get_exception_traceback_descr(e):
-  tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-  result=""
-  for msg in tb_str:
-    result+=msg
-  return result
- 
+  if hasattr(e, '__traceback__'):
+    tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
+    result=""
+    for msg in tb_str:
+      result+=msg
+    return result
+  else:
+    return e
+
 def leave_room(room_id):
   global log
   global client

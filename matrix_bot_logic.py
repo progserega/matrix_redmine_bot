@@ -71,14 +71,24 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
   nick_name=client.api.get_display_name(client.user_id)
   log.debug("nick_name=%s"%nick_name)
 
+  to_us=False
   if re.match(r'^!*%s:* '%nick_name.lower(), message.lower()) != None:
-    # убираем командный префикс:
-    #message=re.sub('^!*%s:* '%nick_name.lower(),'', message)
+    to_us=True
+    # корректный формат body:
     log.debug("remove prefix from cmd")
     # разделяем только один раз (первое слово), а потом берём "второе слово",
     # которое содержит всю оставшуюся строку:
     message=message.split(' ',1)[1].strip()
-  else:
+
+  if re.match(r'^!*"%s" \(https://matrix.to/.*\): '%nick_name.lower(), message.lower()) != None:
+    to_us=True
+    # некорректный формат body (RitX/Element-android):
+    # убираем командный префикс:
+    #message=re.sub('^!*%s:* '%nick_name.lower(),'', message)
+    log.debug("remove prefix from cmd")
+    message = re.sub(r'^!*"%s" \(https://matrix.to/[/#_.:@A-Za-z]*\): '%nick_name.lower(),'', message.lower())
+
+  if to_us == False:
     # пользователь обращается НЕ к роботу - пропуск обработки
     log.debug("skip message in public room without our name")
     return True
