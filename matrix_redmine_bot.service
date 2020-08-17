@@ -3,7 +3,7 @@ Description=Redmine matrix bot
 After=syslog.target network.target nss-lookup.target
 
 [Service]
-Type=simple
+Type=notify
 #Type=forking
 ExecStartPre=/bin/true
 ExecStart=/opt/matrix_redmine_bot/matrix_redmine_bot.py
@@ -15,6 +15,7 @@ LimitNOFILE=32768
 
 # watchdog:
 WatchdogSec=5m
+NotifyAccess=all
 Restart=on-failure
 # предельное количество попыток перезапуска:
 StartLimitBurst=15
