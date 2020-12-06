@@ -78,7 +78,8 @@ def process_message(log,client_class,user,room,message,formated_message=None,for
     log.debug("remove prefix from cmd")
     # разделяем только один раз (первое слово), а потом берём "второе слово",
     # которое содержит всю оставшуюся строку:
-    message=message.split(' ',1)[1].strip()
+    #message=message.split(' ',1)[1].strip()
+    message = re.sub(r'^!*%s: '%nick_name.lower(),'', message.lower())
 
   if re.match(r'^!*"%s" \(https://matrix.to/.*\): '%nick_name.lower(), message.lower()) != None:
     to_us=True
