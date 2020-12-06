@@ -19,6 +19,19 @@ Bot features:
 
 Installation.
 
+Requiments:
+python modules:
+matrix_client
+systemd_watchdog
+redminelib
+imapclient
+
+Install over pip:
+pip install matrix_client
+pip install systemd_watchdog
+pip install redminelib
+pip install imapclient
+
 1. Create a bot account on the matrix server, for example: @redmine:matrix.org
 2. copy config.py.example to config.py
 3. adjust the settings in config.py
@@ -48,6 +61,19 @@ Setting up notifications:
 9. возможность задать список соответствий пользователей в matrix пользователям в redmine - для ситуации, когда matrix-имя не соответствует логину в Redmine
 
 Установка.
+
+Зависимости:
+python модули:
+matrix_client
+systemd_watchdog
+redminelib
+imapclient
+
+Устанавливаем через pip:
+pip install matrix_client
+pip install systemd_watchdog
+pip install redminelib
+pip install imapclient
 
 1. Создайте учётку бота на сервере matrix, например: @redmine:matrix.org
 2. скопируйте config.py.example в config.py 
